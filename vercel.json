@@ -1,7 +1,0 @@
-{
-  "cleanUrls": false,
-  "rewrites": [
-    { "source": "/santa-monica", "destination": "/santa-monica/index.html" },
-    { "source": "/santa-monica/", "destination": "/santa-monica/index.html" }
-  ]
-}
