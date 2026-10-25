@@ -1,0 +1,15 @@
+.santa-monica .menu-title{color:#fff0c9;text-shadow:0 3px 30px #403b2133;font-size:clamp(64px,9.7vw,142px)}
+.santa-monica .menu-tagline{letter-spacing:.14em;color:#344e49}
+.version-link{position:fixed;left:24px;top:60px;color:#345750;font:14px system-ui;text-decoration:none;z-index:12;background:#fff8dfb8;padding:8px 12px;border-radius:20px}
+.is-playing .version-link{display:none}
+.city-credits{position:fixed;bottom:8px;right:16px;z-index:15;font:10px system-ui;color:#344e49;text-decoration:none;background:#fff8dfa0;border-radius:8px;padding:4px 8px}
+.city-nav{position:fixed;bottom:30px;right:24px;display:flex;flex-direction:column;align-items:center;gap:7px;z-index:8;pointer-events:none}
+#cityMap{width:140px;height:140px;background:#fff5dbe8;border:1px solid #ffffff80;border-radius:25px;padding:10px;box-shadow:0 5px 30px #3044381a}
+#cityMap path{fill:none;stroke:#537468;stroke-width:.55;stroke-linecap:round;stroke-linejoin:round}
+#cityDot{fill:#c54032;stroke:#fff6da;stroke-width:2}
+#cityHint{font:14px Bayon,sans-serif;letter-spacing:.06em;color:#24483d;background:#fff5dbe8;padding:6px 12px;border-radius:20px}
+body:not(.is-playing) .city-nav{display:none}
+#cityLoading{position:fixed;inset:0;display:grid;place-content:center;background:#e4dfc9;z-index:100;font:32px Bayon,sans-serif;color:#31594c}
+@media(max-width:650px){.city-nav{right:12px;bottom:150px}#cityMap{width:88px;height:88px;padding:5px;border-radius:16px}#cityHint{font-size:11px;max-width:150px}.version-link{top:76px;left:14px;font-size:12px}}
+
+#cityPeer{fill:#2989d0;stroke:#fff;stroke-width:1.2}#cityDot{stroke-width:1.2}.santa-monica #lapReadout{max-width:260px}
