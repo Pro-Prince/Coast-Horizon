@@ -1,0 +1,68 @@
+.menu-actions{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.menu-actions .menu-start{min-width:168px}
+.menu-invite .menu-start-key{background:#f5f8e6;color:#215c50;border:1px solid #e8f4cd}
+.menu-invite:hover .menu-start-key{background:white}
+.party-bar{position:fixed;z-index:22;left:32px;top:226px;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 64px);flex-wrap:wrap;font:500 12px/1.4 system-ui,sans-serif;color:#194e43}
+.is-playing .party-bar{top:88px}
+#partyStatus{padding:9px 13px;border-radius:24px;background:#f4f8e8e8;box-shadow:0 2px 12px #194e4312;max-width:min(470px,85vw)}
+.party-bar button{font:inherit;padding:8px 13px;border:1px solid #dbe9d2;border-radius:24px;background:#fffbea;color:#204f43;cursor:pointer}
+[hidden]{display:none!important}
+#inviteDialog{color:#244e43;background:#f9f9ee;border:1px solid #fff;border-radius:26px;box-shadow:0 24px 100px #123e4166;padding:34px;max-width:460px;width:calc(100% - 32px);box-sizing:border-box;font-family:system-ui,sans-serif}
+#inviteDialog::backdrop{background:#113d3d80;backdrop-filter:blur(7px)}
+#inviteDialog h2{font-size:28px;letter-spacing:-.04em;margin:14px 0 10px}
+#inviteDialog p{font-size:14px;line-height:1.65;color:#54756a;margin:0 0 22px}
+.dialog-kicker{font-size:10px;letter-spacing:.18em;font-weight:700;color:#658777}
+#closeInvite{position:absolute;top:14px;right:16px;width:34px;height:34px;border:0;border-radius:50%;background:#e8edde;color:#355f52;font-size:24px;cursor:pointer}
+.invite-cars{display:flex;gap:22px;font-size:12px;margin:20px 0 24px}
+.invite-cars span{display:flex;align-items:center;gap:7px}
+.car-dot{width:13px;height:13px;border-radius:50%;background:#db2922;border:1px solid #b9221c}
+.car-dot.blue{background:#3d93dd;border-color:#3480bc}
+#inviteDialog label{font-size:12px;font-weight:600;display:block;margin-bottom:8px}
+#inviteLink{width:100%;box-sizing:border-box;border:1px solid #cbd8c7;border-radius:12px;padding:14px 12px;color:#326756;background:white;font:12px system-ui}
+#copyInvite{width:100%;margin:12px 0 14px;padding:14px;border:0;border-radius:30px;background:#ffdf91;color:#244e43;font-weight:700;font-size:14px;cursor:pointer}
+#copyInvite:disabled{opacity:.5;cursor:wait}
+#inviteNote{display:block;font-size:12px;line-height:1.5;min-height:36px;color:#668173}
+button:focus-visible,input:focus-visible{outline:3px solid #288778;outline-offset:4px}
+@media(max-width:650px){
+.menu-actions{gap:10px}.menu-actions .menu-start{min-width:145px}.menu-actions .menu-start-key{padding:14px 18px}
+.party-bar{left:20px;top:190px;max-width:calc(100vw - 40px);font-size:11px}.is-playing .party-bar{top:86px}
+#inviteDialog{padding:26px}.drive-tools{gap:5px}.tool-button{font-size:9px;padding:8px 10px}
+}
+@media(max-height:520px){.party-bar{top:150px}.is-playing .party-bar{top:72px}.menu-actions .menu-start-hint{display:none}#inviteDialog{padding:18px 28px}#inviteDialog h2{margin:5px 0}.invite-cars{margin:8px 0}}
+#inviteTryAgain{display:block;border:1px solid #a5bda8;background:#edf2df;color:#244e43;border-radius:20px;padding:9px 16px;cursor:pointer;margin:12px 0}
+@media(max-width:650px){
+  .menu-bottom{display:block}.menu-bottom .location-info{display:none}
+  .menu-actions{width:100%;gap:12px}.menu-actions .menu-start{flex:1;min-width:140px}
+  .menu-actions .menu-start-key{width:100%;box-sizing:border-box;justify-content:space-between}
+}
+
+#routeNotice{position:absolute;top:114px;left:32px;max-width:calc(100vw - 64px);padding:9px 15px;border-radius:22px;background:#f5f1dcdd;color:#305b48;font-size:12px;font-weight:600;box-shadow:0 3px 15px #234d3910;pointer-events:none}#routeNotice.impact{background:#f8cf9c;color:#713f22}.is-playing #introToast{display:none}
+@media(max-width:650px){#routeNotice{top:122px;left:20px;max-width:calc(100vw - 40px);font-size:11px;padding:8px 12px}}
+@media(max-height:520px){#routeNotice{top:102px;font-size:10px;padding:6px 10px}}
+.party-bar:has(#partyStatus:empty):has(#partyRetry[hidden]):has(#partySolo[hidden]){display:none}
+#readyDialog,#exitDialog{width:min(440px,calc(100vw - 32px));border:1px solid #fff8;border-radius:24px;padding:30px;background:#f6f4df;color:#225342;font-family:inherit;box-shadow:0 24px 100px #103e4566}
+#readyDialog::backdrop,#exitDialog::backdrop{background:#0e3a4055;backdrop-filter:blur(5px)}
+#readyDialog h2,#exitDialog h2{font-size:28px;line-height:1.1;margin:15px 0}#readyDialog p,#exitDialog p{font-size:17px;line-height:1.5}
+.dialog-actions{display:flex;gap:10px;margin-top:24px}.dialog-actions button{border:0;border-radius:24px;padding:13px 20px;background:#245c49;color:#fff9e0;font:600 17px inherit;cursor:pointer}.dialog-actions button+button{background:#dde5cc;color:#245c49}.dialog-actions button:disabled{opacity:.6;cursor:default}
+#countdown{position:fixed;inset:0;z-index:8;display:grid;place-items:center;pointer-events:none;font:bold 140px system-ui;color:#fff9dd;text-shadow:0 5px 0 #206957,0 8px 40px #14483466;background:#143d3310}
+#countdown[hidden],#boostBanner[hidden]{display:none}
+#boostBanner{position:absolute;top:80px;left:50%;transform:translateX(-50%);font:bold italic 38px system-ui;color:#bdfbff;text-shadow:0 2px 0 #167ace,0 0 25px #008cff;background:#075785b8;border:1px solid #59eaff88;border-radius:18px;padding:10px 22px}
+#boostBanner small{display:block;text-align:center;font:600 14px system-ui;letter-spacing:.12em;margin-top:5px}
+#lapReadout{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.09em;border-radius:20px;background:#174a3ec9;padding:9px 15px;white-space:nowrap}
+@media(max-width:650px){.drive-tools{gap:4px;right:10px;top:12px;max-width:calc(100% - 20px);flex-wrap:wrap;justify-content:flex-end}.tool-button{font-size:9px;padding:8px}.brand{top:65px;font-size:18px}#boostBanner{top:115px;font-size:28px}#lapReadout{bottom:155px;font-size:10px}.party-bar{top:102px}}
+@media(max-width:650px){.controls-card{display:none}}
+/* Race HUD: lap count replaces the former game name. */
+#lapReadout{top:24px;left:28px;bottom:auto;transform:none;padding:13px 18px;border-radius:18px;min-width:115px;background:#f7f4dded;color:#245b49;box-shadow:0 4px 20px #123e4514}
+#lapReadout>span{display:block;font-size:10px;font-weight:700;letter-spacing:.18em}#lapReadout strong{display:block;font-size:32px;line-height:1.1;letter-spacing:.02em;margin:3px 0}#lapReadout small{display:block;font-size:11px;letter-spacing:.02em}
+#condition{position:relative;min-width:102px;display:grid;grid-template-columns:auto auto;align-items:center;gap:8px;padding:9px 12px 13px;border-radius:18px;background:#f7f4dded;color:#245b49;font:600 10px system-ui;letter-spacing:.05em;overflow:hidden}
+#condition strong{font-size:16px;letter-spacing:0}#condition .condition-track{position:absolute;height:3px;left:12px;right:12px;bottom:6px;border-radius:3px;background:#245b4922}#conditionFill{display:block;height:100%;background:#3e9f64;border-radius:3px;transition:width .3s}
+#condition[data-level=worn] #conditionFill{background:#d99938}#condition[data-level=critical]{background:#ffe1c6;color:#8c3a21}#condition[data-level=critical] #conditionFill{background:#e2683d}#condition.hit{animation:conditionHit .45s ease}
+@keyframes conditionHit{35%{box-shadow:0 0 0 5px #ed7f5466;background:#ffc28b}}
+#finishDialog{width:min(440px,calc(100vw - 32px));border:1px solid #fff8;border-radius:24px;padding:32px;background:#f6f4df;color:#225342;font-family:inherit;box-shadow:0 24px 100px #103e4566}#finishDialog::backdrop{background:#0e3a4066;backdrop-filter:blur(5px)}#finishDialog h2{font-size:32px;line-height:1.1;margin:16px 0}#finishDialog p{font-size:18px;line-height:1.5}
+@media(max-width:650px){#lapReadout{top:98px;left:14px;bottom:auto;padding:10px 14px;min-width:95px}#lapReadout strong{font-size:26px}.drive-tools{max-width:calc(100% - 20px)}#condition{padding:7px 10px 12px;min-width:104px}#condition span{font-size:8px}#condition strong{font-size:13px}#boostBanner{top:195px}.is-playing .party-bar{top:185px}}
+
+.menu-title{font-size:clamp(48px,8vw,104px);letter-spacing:-.045em}
+
+#repairBanner{position:fixed;left:50%;top:208px;transform:translateX(-50%);z-index:12;background:#164f40ed;color:#adffdb;border:1px solid #8beec8;border-radius:20px;padding:10px 20px;font:bold 24px Bayon,system-ui;text-align:center;pointer-events:none}#repairBanner[hidden]{display:none}#repairBanner small{display:block;font:12px system-ui;letter-spacing:.02em}
+
+@media(max-width:650px){#repairBanner{top:290px;font-size:21px}}

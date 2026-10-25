@@ -1,0 +1,93 @@
+/* Coastal edition: the original Bayon / ivory / evergreen identity. */
+body:not(.santa-monica){--green:#154a3d;--cream:#ffe9a6}
+body:not(.santa-monica) #sunsetLink{display:none}
+body:not(.santa-monica) #menuScreen::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#fff9e40a 0%,transparent 52%,#123b3817 76%,#123b385c 100%);pointer-events:none}
+body:not(.santa-monica) .menu-title{top:12%;font-size:clamp(60px,6.6vw,96px);line-height:1.15;letter-spacing:-.025em;color:#174e45;text-shadow:0 2px 0 #f7ffe936,0 8px 30px #eefce826}
+body:not(.santa-monica) .menu-heading{top:25px;left:30px;max-width:calc(100% - 300px)}
+body:not(.santa-monica) .menu-tagline{font-size:14px;letter-spacing:.025em;line-height:30px}
+body:not(.santa-monica) .drive-tools{top:24px;right:30px;gap:10px}
+body:not(.santa-monica) .tool-button{height:32px;line-height:30px;padding:0 16px;color:#174b41;background:#fff9e66e;border:1px solid #fffbea94;box-shadow:0 3px 12px #143c3410;font-size:13px;transition:background .18s,transform .18s}
+body:not(.santa-monica) .tool-button:hover{background:#fff9e8ce;transform:translateY(-1px)}
+body:not(.santa-monica) .menu-actions{bottom:146px;gap:24px}
+body:not(.santa-monica) .menu-actions .menu-start{width:214px;gap:10px;border-radius:999px}
+body:not(.santa-monica) .menu-start-key{width:100%;height:64px;font-size:29px;border:1px solid #fff3c5;box-shadow:inset 0 2px 0 #fff9dd80,0 5px 0 #c4a864,0 12px 28px #143c3429;transition:transform .18s,box-shadow .18s,background .18s}
+body:not(.santa-monica) .menu-invite .menu-start-key{background:#f5f5e3;border-color:#ffffee;box-shadow:inset 0 2px 0 #fff,0 5px 0 #bac7ad,0 12px 28px #143c3429}
+body:not(.santa-monica) .menu-start:hover .menu-start-key{transform:translateY(-3px)}
+body:not(.santa-monica) .menu-start:active .menu-start-key{transform:translateY(3px);box-shadow:0 1px 0 #b4b99a,0 3px 12px #143c3429}
+body:not(.santa-monica) .menu-start-hint{margin-top:3px;font-size:12px;letter-spacing:.03em;color:#fff9e3;text-shadow:0 1px 3px #153a3855}
+body:not(.santa-monica) .keyboard-guide{top:auto;bottom:29px;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 60px));height:60px;justify-content:space-between}
+body:not(.santa-monica) .guide-group{position:static;transform:none;gap:3px}
+body:not(.santa-monica) kbd{background:#fcf4dbe8;border-color:#f9f6dcb0;color:#234f42;box-shadow:0 3px 0 #154a3d60;border-radius:8px}
+body:not(.santa-monica) .guide-group p{font-size:12px;color:#fff7df;letter-spacing:.04em}
+body:not(.santa-monica) .guide-keys>span{color:#f3f3d999}
+body:not(.santa-monica):not(.is-playing) .party-bar{bottom:105px}
+body:not(.santa-monica) #lapReadout{top:24px;left:30px;height:32px;background:#fff9e6b3;border-color:#fffbea94;font-size:14px;padding:0 14px;box-shadow:0 3px 12px #143c3410}
+body:not(.santa-monica) #condition{background:#fff9e6b3;color:#174b41;border-color:#fffbea94;box-shadow:0 3px 12px #143c3410}
+body:not(.santa-monica) #mirrorFrame{box-shadow:0 5px 18px #163c3833,inset 0 0 0 3px #fff7df55;border:2px solid #e9e9d6}
+body:not(.santa-monica) dialog{border:1px solid #fffdf0;border-radius:26px;background:#faf6e8;color:#204d40;box-shadow:0 24px 90px #143d3866}
+body:not(.santa-monica) dialog::backdrop{background:#163d3b70;backdrop-filter:blur(6px)}
+body:not(.santa-monica) dialog[open]{animation:coast-dialog-in .22s ease-out}
+body:not(.santa-monica) .dialog-actions button,body:not(.santa-monica) #copyInvite{border-radius:14px;transition:background .18s,transform .18s}
+body:not(.santa-monica) .dialog-actions button:active,body:not(.santa-monica) #copyInvite:active{transform:translateY(2px)}
+body:not(.santa-monica) input:focus-visible,body:not(.santa-monica) textarea:focus-visible{outline:2px solid #4a8875;outline-offset:3px}
+@keyframes coast-dialog-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:700px){
+ body:not(.santa-monica) .menu-heading{top:16px;left:18px;max-width:calc(100% - 210px)}
+ body:not(.santa-monica) .menu-tagline{font-size:11px;line-height:17px}
+ body:not(.santa-monica) .drive-tools{top:16px;right:16px;gap:6px}
+ body:not(.santa-monica) .tool-button{padding:0 11px;font-size:11px;height:28px;line-height:26px}
+ body:not(.santa-monica) .menu-title{top:17%;font-size:58px}
+ body:not(.santa-monica) .menu-actions{width:calc(100% - 44px);gap:14px;bottom:140px}
+ body:not(.santa-monica) .menu-actions .menu-start{width:calc(50% - 7px);flex:1;gap:8px}
+ body:not(.santa-monica) .menu-start-key{height:55px;font-size:25px}
+ body:not(.santa-monica) #lapReadout{top:16px;left:14px;height:28px;font-size:12px;padding:0 10px}
+ body:not(.santa-monica) #lapReadout small{top:31px}
+ body:not(.santa-monica) .keyboard-guide{bottom:26px;width:calc(100% - 30px)}
+}
+@media(pointer:coarse){body:not(.santa-monica) .menu-actions{bottom:max(64px,env(safe-area-inset-bottom))}body:not(.santa-monica):not(.is-playing) .party-bar{bottom:15px}}
+@media(max-height:650px) and (min-width:701px){body:not(.santa-monica) .menu-title{top:12%;font-size:60px}body:not(.santa-monica) .menu-actions{bottom:100px}body:not(.santa-monica) .menu-start-key{height:48px;font-size:25px}body:not(.santa-monica) .keyboard-guide{bottom:8px;height:50px}body:not(.santa-monica):not(.is-playing) .party-bar{bottom:72px}}
+
+#stuntBanner{position:absolute;right:30px;top:82px;display:flex;flex-direction:column;align-items:center;min-width:132px;padding:12px 18px;border:1px solid #fff5c499;border-radius:18px;background:#19483bd9;color:#ffedb2;box-shadow:0 5px 24px #153d3522}
+#stuntBanner strong{font:32px/1.2 Bayon,sans-serif;letter-spacing:.02em}#stuntBanner small{font:13px/1.5 Bayon,sans-serif;letter-spacing:.04em}
+#game-root::before,#game-root::after{content:"";position:absolute;z-index:8;left:0;right:0;height:0;background:#153c37;pointer-events:none;transition:height .4s}#game-root::before{top:0}#game-root::after{bottom:0}.stunt-camera #game-root::before,.stunt-camera #game-root::after{height:12px}
+@media(max-width:700px){#stuntBanner{top:183px;right:14px;min-width:106px;padding:8px 12px}#stuntBanner strong{font-size:25px}#stuntBanner small{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.stunt-camera #game-root::before,.stunt-camera #game-root::after{height:0}}
+
+/* Pickup feedback stays below the driving view, with room for both messages. */
+#pickupNotices{position:absolute;left:50%;bottom:max(60px,calc(env(safe-area-inset-bottom) + 28px));transform:translateX(-50%);display:flex;align-items:flex-end;justify-content:center;gap:10px;width:max-content;max-width:calc(100% - 28px);pointer-events:none}
+#pickupNotices #boostBanner,#pickupNotices #repairBanner{position:static;inset:auto;transform:none;min-width:130px;max-width:190px;padding:8px 18px;border:1px solid #b8eff0aa;border-radius:16px;background:#163e43e8;color:#c0f7ff;font:400 30px/1.05 Bayon,sans-serif;text-align:center;text-shadow:none;box-shadow:0 4px 16px #143c3426}
+#pickupNotices #repairBanner{background:#194c3ee8;color:#c4ffdc;border-color:#a9edc5aa}
+#pickupNotices small{display:block;margin-top:3px;font:400 12px/1.3 Bayon,sans-serif;letter-spacing:.03em;white-space:nowrap}
+@media(max-width:600px){#pickupNotices{gap:8px}#pickupNotices #boostBanner,#pickupNotices #repairBanner{min-width:110px;padding:7px 12px;font-size:24px}#pickupNotices small{font-size:11px}}
+@media(pointer:coarse){#pickupNotices{bottom:max(126px,calc(env(safe-area-inset-bottom) + 118px))}.is-playing:has(#pickupNotices>div:not([hidden])) .party-bar{bottom:200px}}
+
+@media(max-width:600px){body:not(.santa-monica) #lapReadout small{display:none}}
+
+/* The second camera is opt-in; keep the condition bar close to the top. */
+body:not(.is-playing) #toggleMirror{display:none}
+#mirrorFrame[hidden]{display:none}
+body.mirror-hidden #condition{top:24px}
+@media(max-width:1100px){body.mirror-hidden #condition{top:68px}}
+@media(max-width:600px){.is-playing .drive-tools{top:50px;right:12px;gap:4px}body.mirror-hidden #condition{top:88px}body:not(.mirror-hidden) #mirrorFrame{top:88px}body:not(.mirror-hidden) #condition{top:179px}.is-playing .drive-tools .tool-button{padding:0 7px;font-size:10px}}
+
+/* Clear, aligned race labels and an unobstructed boost countdown. */
+body:not(.santa-monica) #lapReadout{background:none;border:0;box-shadow:none;padding:0;color:#174b41;text-shadow:0 1px 3px #fff8dbaa}
+body:not(.santa-monica) #regionReadout{left:30px;top:58px;padding:0;background:none;border:0;box-shadow:none;color:#174b41;text-shadow:0 1px 3px #fff8dbaa}
+#pickupNotices #boostBanner{background:none;border:0;box-shadow:none;text-shadow:0 2px 5px #123e56;font-size:38px;padding:0 12px}
+#fuelGauge{position:fixed;z-index:5;right:30px;bottom:28px;width:145px;padding:12px 15px;border:1px solid #fff8daaa;border-radius:18px;background:#173e38dc;color:#fff2be;font:16px/1.25 Bayon,sans-serif;pointer-events:none}
+#fuelGauge[hidden]{display:none}#fuelGauge span{display:flex;gap:8px;justify-content:space-between}#fuelGauge strong{font-weight:400}#fuelGauge meter{display:block;width:100%;height:12px;margin:7px 0;accent-color:#ffe59b}#fuelGauge small{font-size:11px;letter-spacing:.03em}#fuelGauge.low{color:#ffbb85;border-color:#ffbb85}
+@media(max-width:700px){body:not(.santa-monica) #regionReadout{left:14px;top:44px}#fuelGauge{right:14px;bottom:18px;width:116px;padding:9px 12px;font-size:14px}}
+@media(pointer:coarse){#fuelGauge{bottom:132px}}
+
+#fuelGauge meter::-webkit-meter-bar{background:#627b6c;border:0}#fuelGauge meter::-webkit-meter-optimum-value{background:#ffe59b}#fuelGauge meter::-webkit-meter-suboptimum-value{background:#ffad70}
+
+/* Air rush: compositor-only edge streaks; the road and HUD remain clear. */
+#jumpSpeedFx{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .22s;background:radial-gradient(ellipse at 50% 48%,transparent 42%,#b9f5ff0d 65%,#bceeff55 100%);box-shadow:inset 0 0 65px #c8f6ff55}
+#jumpSpeedFx i{position:absolute;inset:-15%;background:repeating-conic-gradient(from 8deg at 50% 48%,transparent 0deg 16deg,#e8fbffb3 16.1deg 16.35deg,transparent 16.7deg 34deg);mask-image:radial-gradient(ellipse,transparent 38%,#000 92%);animation:airRush .65s linear infinite;animation-play-state:paused}
+.airborne-effect #jumpSpeedFx{opacity:1}.airborne-effect #jumpSpeedFx i{animation-play-state:running}
+@keyframes airRush{from{transform:scale(.85);opacity:.3}to{transform:scale(1.12);opacity:.85}}
+.rough-landing #jumpSpeedFx{opacity:.65;box-shadow:inset 0 0 65px #ffb16588;background:none}
+#stuntBanner{top:auto;right:auto;left:50%;bottom:142px;transform:translateX(-50%);padding:0;background:none;border:0;box-shadow:none;color:#e4fbff;text-shadow:0 2px 8px #183f48}
+#stuntBanner strong{font-size:36px}.rough-landing #stuntBanner{color:#ffcf97}
+@media(pointer:coarse){#stuntBanner{bottom:205px}}
+@media(prefers-reduced-motion:reduce){#jumpSpeedFx{display:none}}
