@@ -80,13 +80,14 @@ const server = http.createServer((req, res) => {
   }
 
   // Static file serving
-  let filePath = path.join(__dirname, pathname);
+  const ROOT_DIR = path.join(__dirname, '..');
+  let filePath = path.join(ROOT_DIR, pathname);
   if (pathname.endsWith('/')) {
     filePath = path.join(filePath, 'index.html');
   }
 
   // Prevent path traversal
-  if (!filePath.startsWith(__dirname)) {
+  if (!filePath.startsWith(ROOT_DIR)) {
     res.writeHead(403);
     res.end('Forbidden');
     return;

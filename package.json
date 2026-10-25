@@ -4,8 +4,8 @@
   "description": "Coast Horizon - A peaceful coastal driving game built with Three.js, procedural audio synthesis, and real-time 2-player multiplayer racing.",
   "type": "module",
   "scripts": {
-    "start": "node server.mjs",
-    "dev": "node --watch server.mjs"
+    "start": "node server/server.mjs",
+    "dev": "node --watch server/server.mjs"
   },
   "keywords": [
     "game",
