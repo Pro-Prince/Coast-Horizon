@@ -2,7 +2,6 @@
   "name": "coast-horizon",
   "version": "1.0.0",
   "description": "Coast Horizon - A peaceful coastal driving game built with Three.js, procedural audio synthesis, and real-time 2-player multiplayer racing.",
-  "main": "server.mjs",
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
@@ -16,6 +15,9 @@
     "multiplayer",
     "procedural"
   ],
-  "author": "",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "author": "Prince Patel",
   "license": "MIT"
 }

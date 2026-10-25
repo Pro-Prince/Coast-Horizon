@@ -3,10 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const { WebSocketServer, WebSocket } = require('C:/Users/HP/github_repos/rea/node_modules/ws');
+import { WebSocketServer, WebSocket } from 'ws';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

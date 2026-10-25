@@ -3,11 +3,14 @@
 # Coast Horizon
 ### Take the scenic route. A peaceful retro-arcade coastal driving game, solo or with a friend.
 
-![Status](https://img.shields.io/badge/status-active-22C55E?style=flat-square)
+![Status](https://img.shields.io/badge/status-live-22C55E?style=flat-square)
+![Demo](https://img.shields.io/badge/demo-coast--horizon.vercel.app-6366F1?style=flat-square)
 ![Graphics](https://img.shields.io/badge/graphics-Three.js%20WebGL-22D3EE?style=flat-square)
 ![Audio](https://img.shields.io/badge/audio-Web%20Audio%20API-A855F7?style=flat-square)
 ![Multiplayer](https://img.shields.io/badge/multiplayer-WebSocket%202P%20Rooms-6366F1?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-F59E0B?style=flat-square)
+
+**[→ Play live](https://coast-horizon.vercel.app/)**
 
 </div>
 
@@ -18,6 +21,14 @@
 **Coast Horizon** is a high-performance, lightweight 3D web driving experience engineered entirely with web standards. Rather than relying on massive game engines or multi-megabyte 3D asset downloads, Coast Horizon builds its entire visual and sonic world procedurally directly inside the browser.
 
 From an extruded parametric Bézier hatchback chassis and a continuous 10-kilometer Catmull-Rom coastal spline highway to an oscillator-synthesized combustion engine that revs dynamically through 6 gear shifts using the Web Audio API, every subsystem is engineered for zero load time, high framerates (60+ FPS), and seamless two-player room matchmaking.
+
+---
+
+## Live Demo
+
+🔗 **[coast-horizon.vercel.app](https://coast-horizon.vercel.app/)**
+
+> Take the scenic route. Play solo or invite a friend into your private two-player room instantly.
 
 ---
 
@@ -57,7 +68,7 @@ From an extruded parametric Bézier hatchback chassis and a continuous 10-kilome
 | GLSL Shaders | Pastel sky gradients, distance ground detail blending & water surf shaders |
 | Vanilla JavaScript (ES Modules) | Core arcade physics, handling equations, and spline mathematics |
 | HTML5 / SVG / CSS3 | Hardware-accelerated race HUD, dialogs, and SVG gauges |
-| Node.js | Local development server & WebSocket multiplayer room broker |
+| Vercel | Production deployment & serverless session proxying |
 
 ---
 
@@ -87,27 +98,14 @@ Directly applying network updates causes rival cars to stutter or snap abruptly.
 
 ---
 
-## Getting Started
+## Author
 
-### Prerequisites
-- Node.js (v18 or higher)
+**Prince Patel** — AI-Powered Product Developer
 
-### Installation & Run
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Pro-Prince/Coast-Horizon.git
-   cd Coast-Horizon
-   ```
-
-2. Start the game server:
-   ```bash
-   node server.mjs
-   ```
-
-3. Open your browser:
-   * **Coast Circuit:** `http://localhost:3000/`
-   * **Santa Monica Free Drive:** `http://localhost:3000/santa-monica/`
+- 🌐 Portfolio: [prince-patel-portfolio.vercel.app](https://prince-patel-portfolio.vercel.app)
+- 🐙 GitHub: [github.com/Pro-Prince](https://github.com/Pro-Prince)
+- 𝕏 X: [@Pro_Prince_1](https://x.com/Pro_Prince_1)
+- 💼 LinkedIn: [linkedin.com/in/prince-patel476](https://www.linkedin.com/in/prince-patel476/)
 
 ---
 
