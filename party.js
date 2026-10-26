@@ -12,10 +12,16 @@ window.createCoastParty=function(game){
   var badge=$('partyStatus'), retry=$('partyRetry'), solo=$('partySolo'), invite=$('inviteFriend');
   var room=new URL(location.href).searchParams.get('room'), role=null, socket=null, ready=false, stopped=false;
   var inviteURL='', generation=0, attempts=0, reconnectTimer=0, connectTimer=0, pingTimer=0, seq=0, lastSend=0, healthRevision=0;
-  var nameDialog=$('joinNameDialog'),myName='user1',peerName='',departedName='',nameTimer=0,noticeTimer=0;
+  var initialName='';
+  try{initialName=localStorage.getItem('coast-preferred-name')||'';}catch{}
+  var myName=playerName(initialName,'Driver');
+  var nameDialog=$('joinNameDialog'),peerName='',departedName='',nameTimer=0,noticeTimer=0;
+  if($('hostName'))$('hostName').value=myName;
+  if($('menuDriverName'))$('menuDriverName').value=myName;
   function savedDriver(){try{return JSON.parse(sessionStorage.getItem('coast-driver:'+room)||'null');}catch{return null;}}
   function saveDriver(){if(room)try{sessionStorage.setItem('coast-driver:'+room,JSON.stringify({name:myName,role:role}));}catch{}}
   function updateNames(){game.setNames(myName,peer?peerName:'');}
+  updateNames();
   function updateMenuButtons(isInvite){
     var ms=$('menuStart'),iv=$('inviteFriend');
     if(!ms||!iv)return;
@@ -33,9 +39,30 @@ window.createCoastParty=function(game){
       if(ih)ih.textContent='Together is fun';
     }
   }
-  function shareName(){myName=playerName($('hostName').value,'user1');$('hostName').value=myName;try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();updateNames();send({type:'profile',name:myName});}
-  $('hostName').addEventListener('input',()=>{clearTimeout(nameTimer);nameTimer=setTimeout(shareName,250);});$('hostName').addEventListener('change',shareName);
-  $('joinNameForm').onsubmit=function(e){e.preventDefault();var val=$('guestName').value.trim();if(!val){$('guestName').setCustomValidity('Please enter your name.');$('guestName').reportValidity();return;}myName=playerName(val,'user2');try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();nameDialog.close();updateNames();connect();};
+  function setDriverName(val){
+    myName=playerName(val,'Driver');
+    if($('hostName') && $('hostName').value!==myName)$('hostName').value=myName;
+    if($('menuDriverName') && $('menuDriverName').value!==myName)$('menuDriverName').value=myName;
+    try{localStorage.setItem('coast-preferred-name',myName);}catch{}
+    saveDriver();
+    updateNames();
+    if(p2pChannel){
+      if(role==='host'){
+        if(broadcastP2PRoster)broadcastP2PRoster();
+      }else{
+        p2pChannel.send({type:'profile',name:myName});
+      }
+    }
+    send({type:'profile',name:myName});
+  }
+  function shareName(){setDriverName($('hostName').value);}
+  $('hostName').addEventListener('input',()=>{clearTimeout(nameTimer);nameTimer=setTimeout(shareName,150);});
+  $('hostName').addEventListener('change',shareName);
+  if($('menuDriverName')){
+    $('menuDriverName').addEventListener('input',()=>{clearTimeout(nameTimer);nameTimer=setTimeout(()=>setDriverName($('menuDriverName').value),150);});
+    $('menuDriverName').addEventListener('change',()=>setDriverName($('menuDriverName').value));
+  }
+  $('joinNameForm').onsubmit=function(e){e.preventDefault();var val=$('guestName').value.trim();if(!val){$('guestName').setCustomValidity('Please enter your name.');$('guestName').reportValidity();return;}myName=playerName(val,'Driver');try{localStorage.setItem('coast-preferred-name',myName);}catch{}if($('menuDriverName'))$('menuDriverName').value=myName;if($('hostName'))$('hostName').value=myName;saveDriver();nameDialog.close();updateNames();connect();};
   $('guestName').oninput=()=>$('guestName').setCustomValidity('');
   $('cancelJoin').onclick=()=>{nameDialog.close();leave();};
   nameDialog.addEventListener('cancel',e=>{e.preventDefault();nameDialog.close();leave();});
@@ -180,13 +207,21 @@ window.createCoastParty=function(game){
       },5000);
     }
     if(m.type==='playerLeft'){departedName=m.name||peerName||'Friend';$('departureNotice').textContent=departedName+' left';$('departureNotice').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('departureNotice').hidden=true,9000);}
+    if(m.type==='profile'){peerName=m.name||'Friend';departedName='';updateNames();}
     if(m.type==='roster')updateRoster(m.players,m.startAt);
     if(m.type==='raceWorld')game.restoreRaceWorld?.(m.world);
-    if(m.type==='fuel'){game.pickup(m.pickup,m.available);if(m.role===role)game.refuel(m.fuel);}
+    if(m.type==='pickup'||m.type==='fuel'||m.type==='boost'||m.type==='repair'){
+      var avail=m.available||(game.now()+20000);
+      var pid=m.pickup||m.id;
+      if(pid)game.pickup(pid,avail);
+      if(m.role===role){
+        if(m.type==='fuel'&&typeof m.fuel==='number')game.refuel(m.fuel);
+        if(m.type==='boost'&&typeof m.until==='number')game.boost(m.until);
+        if(m.type==='repair'&&typeof m.health==='number'){healthRevision=m.healthRevision||healthRevision;game.repair(m.health,m.amount||25);}
+      }
+    }
     if(m.type==='pose'&&m.role===role)game.fuelSync(m.pose.fuel);
-    if(m.type==='boost'){game.pickup(m.pickup,m.available);if(m.role===role)game.boost(m.until);}
     if(m.type==='race'&&m.role===role)game.restoreRace(m.race);
-    if(m.type==='repair'){game.pickup(m.pickup,m.available);if(m.role===role){healthRevision=m.healthRevision;game.repair(m.health,m.amount);}}
     if(m.type==='boostRejected'||m.type==='repairRejected'||m.type==='fuelRejected'){game.pickup(m.pickup,game.now()+1000);}
     if(m.type==='condition'&&m.role===role)game.condition(m.health);
     if(m.type==='impact'&&(m.target!=='peer'||m.role===role))game.impact(m);
@@ -272,6 +307,13 @@ window.createCoastParty=function(game){
         var restartPose={x:role==='guest'?-2.4:2.4,y:0,z:role==='guest'?-3.5:0,h:0,v:0};
         p2pChannel.send({type:'restarted',pose:restartPose});
         handleMessage({type:'restarted',pose:restartPose});
+        return;
+      }
+      if(m.type==='profile'){
+        peerName=playerName(m.name,'Friend');
+        departedName='';
+        updateNames();
+        if(isHost && broadcastP2PRoster)broadcastP2PRoster();
         return;
       }
       handleMessage(m);
@@ -381,7 +423,7 @@ window.createCoastParty=function(game){
         data={room:randHex,invite:location.origin+targetPath+'?room='+randHex};
       }
       if(creation!==inviteCreation)return;
-      room=data.room;role='host';myName=playerName($('hostName').value,'user1');try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
+      room=data.room;role='host';myName=playerName($('hostName').value,'Driver');if($('menuDriverName'))$('menuDriverName').value=myName;try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
       game.place({x:2.4,y:0,z:0,h:0,v:0});
       history.replaceState(null,'',(map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);fillLink();
       note.textContent='Share this link with one friend. Keep this page open.';
@@ -428,7 +470,9 @@ window.createCoastParty=function(game){
   function leave(){
     inviteCreation++;busy=false;clearTimeout(nameTimer);stopped=true;closeSocket(true);room=null;role=null;peer=false;samples=[];inviteURL='';startAt=0;begunAt=null;mineReady=false;hostReady=false;guestReady=false;readyDismissed=false;peerWasConnected=false;
     history.replaceState(null,'',location.pathname);game.hidePeer();game.setRole('host');game.restoreRun(100,0);game.boost(0);game.restore([],{});
-    retry.hidden=solo.hidden=true;invite.hidden=false;myName='user1';peerName='';departedName='';game.setNames('','');$('hostName').value='user1';status('');$('departureNotice').hidden=true;
+    retry.hidden=solo.hidden=true;invite.hidden=false;
+    var savedName='';try{savedName=localStorage.getItem('coast-preferred-name')||'';}catch{}
+    myName=playerName(savedName||myName,'Driver');peerName='';departedName='';game.setNames(myName,'');if($('hostName'))$('hostName').value=myName;if($('menuDriverName'))$('menuDriverName').value=myName;status('');$('departureNotice').hidden=true;
     var l1=$('localDriverName'),l2=$('peerDriverName');if(l1)l1.hidden=true;if(l2)l2.hidden=true;
     document.body.classList.remove('in-party');
     updateMenuButtons(false);
@@ -475,8 +519,8 @@ window.createCoastParty=function(game){
       document.body.classList.add('in-party');
       var saved=savedDriver();
       if(saved){
-        myName=playerName(saved.name,saved.role==='host'?'user1':'user2');
-        if(saved.role==='host')$('hostName').value=myName;
+        myName=playerName(saved.name,saved.role==='host'?'Driver':'Guest');
+        if(saved.role==='host'){if($('hostName'))$('hostName').value=myName;if($('menuDriverName'))$('menuDriverName').value=myName;}
         else $('guestName').value=myName;
         role=saved.role||'guest';
         game.setRole(role);
@@ -488,7 +532,7 @@ window.createCoastParty=function(game){
         var prefName='';
         try{prefName=localStorage.getItem('coast-preferred-name')||'';}catch{}
         if(prefName)$('guestName').value=prefName;
-        myName=playerName(prefName,'user2');
+        myName=playerName(prefName,'Guest');
         updateNames();
         updateMenuButtons(true);
         nameDialog.showModal();
@@ -510,7 +554,14 @@ window.createCoastParty=function(game){
       }
     },
     requestStart:requestStart,
-    collect:function(id,kind){var p=game.pose();send({...p,type:'pose',seq:++seq,healthRevision:healthRevision});send({type:kind==='fuel'?'fuel':kind==='repair'?'repair':'boost',pickup:id});},
+    collect:function(id,kind,lap){
+      var p=game.pose();
+      var cd=game.now()+20000;
+      game.pickup(id,cd);
+      send({type:'pickup',pickup:id,kind:kind,role:role,lap:lap,available:cd,until:game.now()+5000});
+      send({type:kind==='fuel'?'fuel':kind==='repair'?'repair':'boost',pickup:id,role:role,available:cd,until:game.now()+5000});
+      send({type:'pose',role:role,pose:p,seq:++seq,healthRevision:healthRevision});
+    },
     sendImpact:function(hit){send({type:'impact',...hit});},
     blocked:function(){return (nameDialog&&nameDialog.open) || (dialog&&dialog.open) || (readyDialog&&readyDialog.open) || (!!room&&(!ready||!startAt||game.now()<startAt));},
     canStart:function(){return !nameDialog.open && !dialog.open && (!room||ready);},

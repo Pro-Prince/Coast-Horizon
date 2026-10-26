@@ -35,6 +35,10 @@
   <div id="menuScreen">
     <a id="sunsetLink" href="/santa-monica/">Explore Santa Monica · open world →</a>
     <h1 class="menu-title">COAST HORIZON</h1>
+    <div class="menu-driver">
+      <span class="driver-kicker">DRIVER</span>
+      <input id="menuDriverName" maxlength="20" placeholder="Your name" autocomplete="nickname" spellcheck="false" value="Driver">
+    </div>
     <div class="menu-actions">
       <button class="menu-start" id="menuStart" type="button"><span class="menu-start-key">Start game</span><span class="menu-start-hint">or press space</span></button>
       <button class="menu-start menu-invite" id="inviteFriend" type="button"><span class="menu-start-key">Invite friend</span><span class="menu-start-hint">Together is fun</span></button>
@@ -54,7 +58,7 @@
     <p id="inviteDescription">Send a little escape their way. Open the link on another device and share the same stretch of coast.</p>
     <div class="invite-cars"><span><i class="car-dot"></i>You · red car</span><span><i class="car-dot blue"></i>Friend · blue car</span></div>
     <label for="inviteLink">Your private invite</label><input id="inviteLink" type="text" readonly spellcheck="false" aria-label="Invite link">
-    <button id="inviteTryAgain" type="button" hidden>Try again</button><label for="hostName">Your name</label><input id="hostName" value="user1" maxlength="20" autocomplete="nickname" spellcheck="false">
+    <button id="inviteTryAgain" type="button" hidden>Try again</button><label for="hostName">Your name</label><input id="hostName" value="Driver" maxlength="20" autocomplete="nickname" spellcheck="false">
     <button id="copyInvite" type="button" disabled>Copy link</button><span id="inviteNote" role="status" aria-live="polite"></span>
   </dialog>
   <dialog id="joinNameDialog" aria-labelledby="joinNameTitle"><span class="dialog-kicker">YOU DRIVE THE BLUE CAR</span><h2 id="joinNameTitle">What’s your name?</h2><form id="joinNameForm"><label for="guestName">Your name</label><input id="guestName" maxlength="20" placeholder="Your name" autocomplete="nickname" required><p>Your name will appear above your car.</p><div class="dialog-actions"><button type="submit">Join game</button><button type="button" id="cancelJoin">Cancel</button></div></form></dialog>
@@ -1176,7 +1180,7 @@ async function start(saved){
     var trafficFrame=[];
     var party=window.createCoastParty({
       syncWorld:adventure.sync,
-      pose:function(){return {x:car.position.x,z:car.position.z,h:Math.atan2(Math.sin(heading),Math.cos(heading)),v:velocity,jumpId:jump?jump.id:null,health:health,drowned:drowned,launched:!launchProtected};},
+      pose:function(){return {x:car.position.x,z:car.position.z,h:Math.atan2(Math.sin(heading),Math.cos(heading)),v:velocity,jumpId:jump?jump.id:null,health:health,drowned:drowned,launched:!launchProtected,fuel:fuel,boostUntil:boostUntil};},
       stop:function(){keys=Object.create(null);touch.gas=touch.brake=touch.left=touch.right=false;velocity=0;},
       start:startGame,begin:beginCountdown,unlock:unlockAudio,
       cancelStart:function(){countdownEnd=0;raceStartedAt=0;raceFinishedAt=0;finalRacePosition=null;adventure.setRaceStart(0);countdownEl.hidden=true;document.body.classList.remove('grid-intro');},
@@ -1209,7 +1213,7 @@ async function start(saved){
         // Wheel roll runs every render frame, rather than jumping with network poses.
       }
     });
-    adventure.configure(function(hit){party.sendImpact(hit);},function(id,kind){if(party.active())party.collect(id,kind);else if(kind==='fuel')refuel();else if(kind==='repair'){var restored=repairedCondition(health);repairCar(restored,restored-health);}else activateBoost(adventure.now()+5000);},()=>party.active(),kind=>kind!=='nitro'||boostUntil<=adventure.now());
+    adventure.configure(function(hit){party.sendImpact(hit);},function(id,kind,lap){if(kind==='fuel')refuel();else if(kind==='repair'){var restored=repairedCondition(health);repairCar(restored,restored-health);}else activateBoost(adventure.now()+5000);if(party&&party.active())party.collect(id,kind,lap);},()=>party.active(),kind=>kind!=='nitro'||boostUntil<=adventure.now());
     window.__COAST_RENDER_DEBUG=function(){return {localColor:paint.color.getHexString(),peerColor:peerPaint.color.getHexString(),peerVisible:peerCar.visible,peerHealth:peerHealth,peerY:peerCar.position.y,peerX:peerCar.position.x,peerZ:peerCar.position.z};};
 
     var mainRenderStats={calls:0,triangles:0},lastShadowAt=-Infinity;

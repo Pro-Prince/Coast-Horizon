@@ -163,7 +163,14 @@ export function createAdventure({route=defaultRoute,THREE,scene,car,paint,traffi
       const lap=pickupLap(o.z),key=pickupKey(o.id,lap);
       if(!canPickup(o.kind)||(pendingPickups.get(key)||0)>now()||(raceWorld?!pickupAvailable(raceWorld,o.id,lap):(cooldowns[o.id]||0)>now()))continue;
       const dz=to.z-from.z,dx=to.x-from.x,t=Math.max(0,Math.min(1,((o.z-from.z)*dz+(o.x-from.x)*dx)/(dz*dz+dx*dx||1)));
-      if(Math.hypot(from.x+dx*t-o.x,from.z+dz*t-o.z)<1.65){if(raceWorld){if(!isShared())claimPickup(raceWorld,o,lap,'player',now());pendingPickups.set(key,now()+1000);}else cooldowns[o.id]=now()+20000;onPickup(o.id,o.kind);}
+      if(Math.hypot(from.x+dx*t-o.x,from.z+dz*t-o.z)<1.65){
+        if(raceWorld){
+          claimPickup(raceWorld,o,lap,'player',now());
+          pendingPickups.set(key,now()+20000);
+        }
+        cooldowns[o.id]=now()+20000;
+        onPickup(o.id,o.kind,lap);
+      }
     }
   }
   return {sync,now,setRate,update,collide,collect,addImpact,setRaceStart:value=>{raceStart=value;if(!value)raceWorld=null;else if(raceWorld?.startAt!==value)raceWorld=createRaceWorld(value);pendingPickups.clear();previousTraffic.clear();},
