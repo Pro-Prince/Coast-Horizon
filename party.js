@@ -6,12 +6,7 @@ window.createCoastParty=function(game){
   // This label is deliberately omitted from the copied invite URL.
   var map=location.pathname.startsWith('/santa-monica')?'santa-monica':'coast';
   var localTest=['localhost','127.0.0.1','[::1]'].indexOf(location.hostname)!==-1;
-  var tabLabel='';
-  {
-    try{tabLabel=sessionStorage.getItem('coast-driver-tab')||'';}catch{}
-    if(!/^[a-f0-9]{32}$/.test(tabLabel))tabLabel=crypto.randomUUID().replaceAll('-','');
-    try{sessionStorage.setItem('coast-driver-tab',tabLabel);}catch{}
-  }
+  var tabLabel=crypto.randomUUID().replaceAll('-','');
   var $=function(id){return document.getElementById(id);};
   var dialog=$('inviteDialog'), link=$('inviteLink'), copy=$('copyInvite'), note=$('inviteNote');
   var badge=$('partyStatus'), retry=$('partyRetry'), solo=$('partySolo'), invite=$('inviteFriend');
@@ -275,9 +270,6 @@ window.createCoastParty=function(game){
         });
         pInst.on('error',function(err){
           console.warn('PeerJS info:',err.type||err);
-          if(!isHost && (err.type==='peer-unavailable'||err.type==='invalid-id')){
-            leave();
-          }
         });
       }
     }catch(e){console.warn('PeerJS init:',e);}
@@ -295,11 +287,6 @@ window.createCoastParty=function(game){
         if(peer||(ready&&role==='guest'&&begunAt)||stopped||current!==generation){if(joinPulse){clearInterval(joinPulse);joinPulse=null;}return;}
         p2pChannel.send({type:'join',name:myName,_tab:tabLabel});
       },1000);
-      setTimeout(function(){
-        if(current===generation && !stopped && !peer && !begunAt && role==='guest' && !readyDialog.open){
-          leave();
-        }
-      },5000);
     }
   }
 
@@ -391,21 +378,15 @@ window.createCoastParty=function(game){
     openInvite();
   }
   invite.addEventListener('click',inviteClick);
-  function cancelInvite(){
-    if(!peer){
-      leave();
-    }
-  }
-  $('closeInvite').addEventListener('click',function(){dialog.close();cancelInvite();});
-  dialog.addEventListener('click',function(e){if(e.target===dialog && (e.offsetX<0||e.offsetY<0||e.offsetX>dialog.clientWidth||e.offsetY>dialog.clientHeight)){dialog.close();cancelInvite();}});
+  $('closeInvite').addEventListener('click',function(){dialog.close();});
+  dialog.addEventListener('click',function(e){if(e.target===dialog && (e.offsetX<0||e.offsetY<0||e.offsetX>dialog.clientWidth||e.offsetY>dialog.clientHeight))dialog.close();});
   dialog.addEventListener('close',function(){
     // A cancelled creation must not switch a later solo game into a room.
     if(busy&&!room){inviteCreation++;busy=false;}
-    if(!peer){leave();}
   });
   copy.addEventListener('click',async function(){
     if(!inviteURL)return;shareName();
-    try{await navigator.clipboard.writeText(inviteURL);copy.textContent='Copied!';note.textContent='Link copied. Send it to your friend.';dialog.close();}
+    try{await navigator.clipboard.writeText(inviteURL);copy.textContent='Copied!';note.textContent='Link copied. Send it to your friend.';}
     catch{link.focus();link.select();note.textContent='Select and copy the link above to share it.';}
   });
   retry.addEventListener('click',function(){stopped=false;attempts=0;if(room)connect();else openInvite();});
@@ -413,6 +394,7 @@ window.createCoastParty=function(game){
     inviteCreation++;busy=false;clearTimeout(nameTimer);stopped=true;closeSocket(true);room=null;role=null;peer=false;samples=[];inviteURL='';startAt=0;begunAt=null;mineReady=false;
     history.replaceState(null,'',location.pathname);game.hidePeer();game.setRole('host');game.restoreRun(100,0);game.boost(0);game.restore([],{});
     retry.hidden=solo.hidden=true;invite.hidden=false;myName='user1';peerName='';departedName='';game.setNames('','');$('hostName').value='user1';status('');$('departureNotice').hidden=true;
+    var l1=$('localDriverName'),l2=$('peerDriverName');if(l1)l1.hidden=true;if(l2)l2.hidden=true;
     document.body.classList.remove('in-party');
     updateMenuButtons(false);
     if(dialog.open)dialog.close();if(readyDialog.open)readyDialog.close();if(nameDialog.open)nameDialog.close();
@@ -447,6 +429,7 @@ window.createCoastParty=function(game){
       status('');
     }else{
       inviteURL=location.origin+location.pathname+'?room='+room;
+      document.body.classList.add('in-party');
       var saved=savedDriver();
       if(saved){
         myName=playerName(saved.name,saved.role==='host'?'user1':'user2');

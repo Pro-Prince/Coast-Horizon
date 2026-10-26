@@ -1053,7 +1053,7 @@ async function start(saved){
       fillLight.position.set(car.position.x-15,15,car.position.z+20);sky.position.copy(camera.position);clouds.position.set(camera.position.x,0,camera.position.z);clouds.rotation.y=-performance.now()*.000008;
       if(gameState!=='menu')rearView.capture();
       renderer.render(scene,camera);
-      [[car,'localDriverName'],[peerCar,'peerDriverName']].forEach(function([n,id]){var label=document.getElementById(id),p=new THREE.Vector3(0,2.05,0).applyMatrix4(n.matrixWorld).project(camera);label.hidden=!party.active()||!n.visible||!label.textContent||p.z< -1||p.z>1||Math.abs(p.x)>1.1||Math.abs(p.y)>1.1;if(!label.hidden){label.style.left=((p.x+1)*innerWidth/2)+'px';label.style.top=((1-p.y)*innerHeight/2)+'px';}});
+      [[car,'localDriverName'],[peerCar,'peerDriverName']].forEach(function([n,id]){var label=document.getElementById(id);if(!label)return;if(!party.active()||!label.textContent||!label.textContent.trim()){label.hidden=true;return;}var p=new THREE.Vector3(0,2.05,0).applyMatrix4(n.matrixWorld).project(camera);label.hidden=!n.visible||p.z< -1||p.z>1||Math.abs(p.x)>1.1||Math.abs(p.y)>1.1;if(!label.hidden){label.style.left=((p.x+1)*innerWidth/2)+'px';label.style.top=((1-p.y)*innerHeight/2)+'px';}});
       mainRenderStats.calls=renderer.info.render.calls;mainRenderStats.triangles=renderer.info.render.triangles;
       if(gameState!=='menu')rearView.overlay();
       camera.position.copy(savedCamera);camera.lookAt(target);
