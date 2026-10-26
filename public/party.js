@@ -103,7 +103,7 @@ window.createCoastParty=function(game){
     }
     if(other){lastPeer=performance.now();samples=[{t:lastPeer,pose:other.pose}];game.showPeer(other.pose);}
     else{samples=[];game.hidePeer();}
-    if(!startAt&&mine)game.place(mine.pose);
+    if(!startAt&&mine&&!begunAt)game.place(mine.pose);
     if(startAt){
       document.querySelectorAll('dialog').forEach(d=>{try{if(d.open)d.close();}catch(e){}d.removeAttribute('open');});
       status(!peer&&departedName?departedName+' left':'');
@@ -150,7 +150,10 @@ window.createCoastParty=function(game){
     if(m.type==='impact'&&(m.target!=='peer'||m.role===role))game.impact(m);
     if(m.type==='pose' && m.role!==role){
       peer=true;lastPeer=performance.now();
-      samples.push({t:lastPeer,pose:m.pose});if(samples.length>12)samples.shift();
+      var poseData=m.pose || m;
+      if(poseData && typeof poseData.x === 'number' && typeof poseData.z === 'number'){
+        samples.push({t:lastPeer,pose:poseData});if(samples.length>12)samples.shift();
+      }
     }
     if(m.type==='restarted')game.restart(m.pose);
     if(m.type==='reset'||m.type==='correction'){game.place(m.pose);game.restoreRace(m.race);}
@@ -190,13 +193,17 @@ window.createCoastParty=function(game){
       handleMessage(rosterMsg);
     };
 
+    var joinPulse=null;
     function onIncomingData(raw){
       if(current!==generation || stopped)return;
       var m;try{m=typeof raw==='string'?JSON.parse(raw):raw;}catch{return;}
       if(m._tab===tabLabel)return;
       if(m.type==='join'&&isHost){
         peer=true;peerName=m.name||'Friend';updateNames();
-        hostReady=false;guestReady=false;
+        if(begunAt || (startAt && game.now() < startAt + 10000)){
+          if(broadcastP2PRoster)broadcastP2PRoster();
+          return;
+        }
         var guestPose={x:-1.8,y:0,z:0,h:0,v:0};
         var hostPose=game.pose();
         var welcomeMsg={type:'welcome',role:'guest',name:m.name,pose:guestPose,health:100,distance:0,race:1,fuel:100,startAt:0,_forTab:m._tab};
@@ -206,6 +213,7 @@ window.createCoastParty=function(game){
       }
       if(m.type==='welcome'&&!isHost){
         if(m._forTab&&m._forTab!==tabLabel)return;
+        if(joinPulse){clearInterval(joinPulse);joinPulse=null;}
         role='guest';ready=true;attempts=0;clearTimeout(connectTimer);
         handleMessage(m);
         return;
@@ -252,8 +260,8 @@ window.createCoastParty=function(game){
       status('Joining your shared drive…');
       game.setRole('guest');updateNames();
       p2pChannel.send({type:'join',name:myName,_tab:tabLabel});
-      var joinPulse=setInterval(function(){
-        if(peer||(ready&&role==='guest'&&begunAt)||stopped||current!==generation){clearInterval(joinPulse);return;}
+      joinPulse=setInterval(function(){
+        if(peer||(ready&&role==='guest'&&begunAt)||stopped||current!==generation){if(joinPulse){clearInterval(joinPulse);joinPulse=null;}return;}
         p2pChannel.send({type:'join',name:myName,_tab:tabLabel});
       },1000);
     }
@@ -385,24 +393,28 @@ window.createCoastParty=function(game){
     raceStart:function(){return startAt;},active:function(){return !!room;},leave:leave,launch:function(){send({type:'launch'});},restart:function(){send({type:'restart'});},requestStart:requestStart,
     collect:function(id,kind){var p=game.pose();send({...p,type:'pose',seq:++seq,healthRevision:healthRevision});send({type:kind==='fuel'?'fuel':kind==='repair'?'repair':'boost',pickup:id});},
     sendImpact:function(hit){send({type:'impact',...hit});},
-    blocked:function(){return nameDialog.open || dialog.open || readyDialog.open || (!!room&&(!ready||!startAt||game.now()<startAt));},
+    blocked:function(){return (nameDialog&&nameDialog.open) || (dialog&&dialog.open) || (readyDialog&&readyDialog.open) || (!!room&&(!ready||!startAt||game.now()<startAt));},
     canStart:function(){return !nameDialog.open && !dialog.open && (!room||ready);},
     spawnX:function(){return room?(role==='guest'?-1.8:1.8):0;},
     reset:function(){if(room){if(ready)send({type:'reset'});return true;}return false;},
     frame:function(t){
       if(ready && startAt && game.now()>=startAt && ((socket && socket.readyState===1)||p2pChannel) && t-lastSend>=50 && !document.hidden){
-        lastSend=t;var p=game.pose();p.type='pose';p.seq=++seq;p.healthRevision=healthRevision;p.role=role;send(p);
+        lastSend=t;var p=game.pose();send({type:'pose',role:role,pose:p,seq:++seq,healthRevision:healthRevision});
       }
       if(peer&&samples.length){
         var target=t-100;
         while(samples.length>2 && samples[1].t<=target)samples.shift();
         var a=samples[0],b=samples[1]||a;
-        var f=a===b?1:Math.max(0,Math.min(1,(target-a.t)/(b.t-a.t)));
-        var angle=Math.atan2(Math.sin(b.pose.h-a.pose.h),Math.cos(b.pose.h-a.pose.h));
-        var rollAngle=Math.atan2(Math.sin((b.pose.roll||0)-(a.pose.roll||0)),Math.cos((b.pose.roll||0)-(a.pose.roll||0)));
-        game.showPeer({roll:(a.pose.roll||0)+rollAngle*f,yaw:(a.pose.yaw||0)+((b.pose.yaw||0)-(a.pose.yaw||0))*f,y:(a.pose.y||0)+((b.pose.y||0)-(a.pose.y||0))*f,pitch:(a.pose.pitch||0)+((b.pose.pitch||0)-(a.pose.pitch||0))*f,jumpId:b.pose.jumpId||null,x:a.pose.x+(b.pose.x-a.pose.x)*f,z:a.pose.z+(b.pose.z-a.pose.z)*f,h:a.pose.h+angle*f,v:b.pose.v,boostUntil:b.pose.boostUntil||0,health:b.pose.health??100,launched:b.pose.launched!==false,drowned:!!b.pose.drowned});
-        if(t-lastPeer>3500 && !localTest){game.hidePeer();status(role==='host'?'Friend is away · waiting for updates':'Host is away · waiting for updates');}
-        else if(lastStatus.indexOf('away')>=0)status(role==='host'?'Friend joined · you are red':'Connected · you are blue');
+        if(a && a.pose && b && b.pose){
+          var f=(a===b || !b.t || b.t===a.t) ? 1 : Math.max(0,Math.min(1,(target-a.t)/(b.t-a.t)));
+          var ah=a.pose.h||0, bh=b.pose.h||0;
+          var angle=Math.atan2(Math.sin(bh-ah),Math.cos(bh-ah));
+          var aRoll=a.pose.roll||0, bRoll=b.pose.roll||0;
+          var rollAngle=Math.atan2(Math.sin(bRoll-aRoll),Math.cos(bRoll-aRoll));
+          game.showPeer({roll:aRoll+rollAngle*f,yaw:(a.pose.yaw||0)+((b.pose.yaw||0)-(a.pose.yaw||0))*f,y:(a.pose.y||0)+((b.pose.y||0)-(a.pose.y||0))*f,pitch:(a.pose.pitch||0)+((b.pose.pitch||0)-(a.pose.pitch||0))*f,jumpId:b.pose.jumpId||null,x:a.pose.x+(b.pose.x-a.pose.x)*f,z:a.pose.z+(b.pose.z-a.pose.z)*f,h:ah+angle*f,v:b.pose.v||0,boostUntil:b.pose.boostUntil||0,health:b.pose.health??100,launched:b.pose.launched!==false,drowned:!!b.pose.drowned});
+          if(t-lastPeer>3500 && !localTest){game.hidePeer();status(role==='host'?'Friend is away · waiting for updates':'Host is away · waiting for updates');}
+          else if(lastStatus.indexOf('away')>=0)status(role==='host'?'Friend joined · you are red':'Connected · you are blue');
+        }
       }
     }
   };

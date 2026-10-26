@@ -117,7 +117,10 @@ export function createAdventure({route=defaultRoute,THREE,scene,car,paint,traffi
     for(const [id,node] of trafficNodes)if(!carIds.has(id)){node.visible=false;trafficPool.push(node);trafficNodes.delete(id);}
     for(const o of cars){
       if(!trafficNodes.has(o.id)){const n=trafficPool.pop()||trafficCar(o.id);n.userData.body.color.copy(col(o.rival?RIVAL_COLORS[Number(o.id.split(':')[1])]:CAR_COLORS.traffic[Math.abs(Number(o.id.split(':')[1]))%CAR_COLORS.traffic.length]));trafficNodes.set(o.id,n);}
-      const node=trafficNodes.get(o.id);node.visible=!o.menuHidden;node.userData.boost.visible=!!o.rival&&o.boostUntil>now();node.userData.boost.scale.z=1+Math.sin(now()*.05)*.12;place(node,o.x,o.z,o.h,o.y||0);node.rotation.x+=o.pitch||0;node.rotation.z=o.roll||0;const contact=node.getObjectByName('contact-shadow');if(contact)contact.visible=!(o.y>.25);
+      const node=trafficNodes.get(o.id);
+      const roadDist=Math.abs(route.near(o.z,z)-z);
+      if(o.menuHidden||roadDist>360){node.visible=false;continue;}
+      node.visible=true;node.userData.boost.visible=!!o.rival&&o.boostUntil>now();node.userData.boost.scale.z=1+Math.sin(now()*.05)*.12;place(node,o.x,o.z,o.h,o.y||0);node.rotation.x+=o.pitch||0;node.rotation.z=o.roll||0;const contact=node.getObjectByName('contact-shadow');if(contact)contact.visible=!(o.y>.25);
       const distance=Math.hypot(o.x-car.position.x,o.z-z);node.userData.distant=distance>(node.userData.distant?58:76);
       node.userData.near.visible=!node.userData.distant;node.userData.far.visible=node.userData.distant;
       node.userData.far.userData.paint.color.copy(node.userData.body.color);
