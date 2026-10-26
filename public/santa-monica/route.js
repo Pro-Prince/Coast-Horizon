@@ -23,7 +23,7 @@ export function validCoastPose(x,z){let sign=0;for(let i=0;i<4;i++){const a=DATA
 export const inWater=()=>false,pierApproach=()=>false,PIER={};
 export const onBridge=()=>false,bridgeApproach=()=>false,incidentZone=()=>false,bridgeBarriers=()=>[],crashObstacles=()=>[],hazards=()=>[];
 export const travelDistance=(a,b)=>Math.hypot(b.x-a.x,b.z-a.z);
-export const spawn=(role='host')=>({...DATA.spawn,x:role==='guest'?-1.8:1.8,z:-2});
+export const spawn=(role='host')=>({...DATA.spawn,x:role==='guest'?-2.4:2.4,z:role==='guest'?-3.5:-2});
 export const safeSpawn=role=>spawn(role);
 export function clear(x,z,r=2.7){return !obstacles(x,z).some(o=>{const dx=x-o.x,dz=z-o.z,c=Math.cos(o.h),s=Math.sin(o.h);return Math.abs(dx*c-dz*s)<o.w+r&&Math.abs(dx*s+dz*c)<o.d+r})}
 function pathInfo(points){const distances=[0];for(let i=1;i<points.length;i++)distances.push(distances.at(-1)+Math.hypot(points[i][0]-points[i-1][0],points[i][2]-points[i-1][2]));return {points,distances,length:distances.at(-1)}}

@@ -181,11 +181,13 @@ window.createCoastParty=function(game){
 
     broadcastP2PRoster=function(){
       var bothReady=hostReady&&guestReady;
+      var hostPose={x:2.4,y:0,z:0,h:0,v:0};
+      var guestPose={x:-2.4,y:0,z:-3.5,h:0,v:0};
       var rosterMsg={
         type:'roster',
         players:[
-          {role:'host',name:myName,ready:hostReady,pose:game.pose()},
-          {role:'guest',name:peerName,ready:guestReady,pose:{x:-1.8,y:0,z:0,h:0,v:0}}
+          {role:'host',name:myName,ready:hostReady,pose:hostPose},
+          {role:'guest',name:peerName,ready:guestReady,pose:guestPose}
         ],
         startAt:bothReady?3200:0
       };
@@ -204,8 +206,9 @@ window.createCoastParty=function(game){
           if(broadcastP2PRoster)broadcastP2PRoster();
           return;
         }
-        var guestPose={x:-1.8,y:0,z:0,h:0,v:0};
-        var hostPose=game.pose();
+        var guestPose={x:-2.4,y:0,z:-3.5,h:0,v:0};
+        var hostPose={x:2.4,y:0,z:0,h:0,v:0};
+        game.place(hostPose);
         var welcomeMsg={type:'welcome',role:'guest',name:m.name,pose:guestPose,health:100,distance:0,race:1,fuel:100,startAt:0,_forTab:m._tab};
         p2pChannel.send(welcomeMsg);
         broadcastP2PRoster();
@@ -224,7 +227,7 @@ window.createCoastParty=function(game){
         return;
       }
       if(m.type==='restart'){
-        var restartPose={x:role==='guest'?-1.8:1.8,y:0,z:0,h:0,v:0};
+        var restartPose={x:role==='guest'?-2.4:2.4,y:0,z:role==='guest'?-3.5:0,h:0,v:0};
         p2pChannel.send({type:'restarted',pose:restartPose});
         handleMessage({type:'restarted',pose:restartPose});
         return;
@@ -330,6 +333,7 @@ window.createCoastParty=function(game){
       }
       if(creation!==inviteCreation)return;
       room=data.room;role='host';myName=playerName($('hostName').value,'user1');saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
+      game.place({x:2.4,y:0,z:0,h:0,v:0});
       history.replaceState(null,'',(map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);fillLink();
       note.textContent='Share this link with one friend. Keep this page open.';
       retry.hidden=solo.hidden=$('inviteTryAgain').hidden=true;
@@ -399,7 +403,7 @@ window.createCoastParty=function(game){
     raceStart:function(){return startAt;},active:function(){return !!room;},leave:leave,launch:function(){send({type:'launch'});},
     restart:function(){
       if(p2pChannel){
-        var restartPose={x:role==='guest'?-1.8:1.8,y:0,z:0,h:0,v:0};
+        var restartPose={x:role==='guest'?-2.4:2.4,y:0,z:role==='guest'?-3.5:0,h:0,v:0};
         p2pChannel.send({type:'restarted',pose:restartPose});
         handleMessage({type:'restarted',pose:restartPose});
       }else{
@@ -411,7 +415,7 @@ window.createCoastParty=function(game){
     sendImpact:function(hit){send({type:'impact',...hit});},
     blocked:function(){return (nameDialog&&nameDialog.open) || (dialog&&dialog.open) || (readyDialog&&readyDialog.open) || (!!room&&(!ready||!startAt||game.now()<startAt));},
     canStart:function(){return !nameDialog.open && !dialog.open && (!room||ready);},
-    spawnX:function(){return room?(role==='guest'?-1.8:1.8):0;},
+    spawnX:function(){return room?(role==='guest'?-2.4:2.4):0;},
     reset:function(){if(room){if(ready)send({type:'reset'});return true;}return false;},
     frame:function(t){
       if(ready && startAt && game.now()>=startAt && ((socket && socket.readyState===1)||p2pChannel) && t-lastSend>=50 && !document.hidden){
