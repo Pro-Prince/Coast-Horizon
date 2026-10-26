@@ -33,45 +33,68 @@ window.createCoastParty=function(game){
       if(ih)ih.textContent='Together is fun';
     }
   }
-  function shareName(){myName=playerName($('hostName').value,'user1');$('hostName').value=myName;saveDriver();updateNames();send({type:'profile',name:myName});}
+  function shareName(){myName=playerName($('hostName').value,'user1');$('hostName').value=myName;try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();updateNames();send({type:'profile',name:myName});}
   $('hostName').addEventListener('input',()=>{clearTimeout(nameTimer);nameTimer=setTimeout(shareName,250);});$('hostName').addEventListener('change',shareName);
-  $('joinNameForm').onsubmit=function(e){e.preventDefault();if(!$('guestName').value.trim()){$('guestName').setCustomValidity('Please enter your name.');$('guestName').reportValidity();return;}myName=playerName($('guestName').value,'user2');saveDriver();nameDialog.close();updateNames();connect();};
+  $('joinNameForm').onsubmit=function(e){e.preventDefault();var val=$('guestName').value.trim();if(!val){$('guestName').setCustomValidity('Please enter your name.');$('guestName').reportValidity();return;}myName=playerName(val,'user2');try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();nameDialog.close();updateNames();connect();};
   $('guestName').oninput=()=>$('guestName').setCustomValidity('');
   $('cancelJoin').onclick=()=>{nameDialog.close();leave();};
   nameDialog.addEventListener('cancel',e=>{e.preventDefault();nameDialog.close();leave();});
   var startAt=0,begunAt=null,mineReady=false,readyDialog=$('readyDialog'),p2pChannel=null;
   var hostReady=false,guestReady=false,broadcastP2PRoster=null,activePeer=null;
+  var readyDismissed=false,peerWasConnected=false;
   function send(m){
     if(!ready)return;
     if(m && !m._tab) m._tab=tabLabel;
     if(socket && socket.readyState===1)socket.send(JSON.stringify(m));
     else if(p2pChannel)p2pChannel.send(m);
   }
-  function readiness(){
-    game.unlock();if(!ready)return;
+  function readiness(force=false){
+    game.unlock();if(!ready||!peer)return;
     if(startAt&&game.now()>=startAt)return;
-    if(dialog.open)dialog.close();if(!readyDialog.open)readyDialog.showModal();
+    if(dialog.open)dialog.close();
+    if(!force && readyDismissed && !mineReady)return;
+    if(!readyDialog.open)readyDialog.showModal();
   }
   function setReady(val){
     game.unlock();
+    if(!val){
+      readyDismissed=true;
+      mineReady=false;
+      if(readyDialog.open)readyDialog.close();
+      $('readyYes').disabled=false;$('readyYes').textContent='Yes, ready!';
+      $('readyNo').textContent='No, not yet';
+      if(p2pChannel){
+        if(role==='host'){
+          hostReady=false;
+          if(broadcastP2PRoster)broadcastP2PRoster();
+          return;
+        }else{
+          p2pChannel.send({type:'ready',value:false});
+          return;
+        }
+      }
+      send({type:'ready',value:false});
+      return;
+    }
+    readyDismissed=false;
+    mineReady=true;
+    $('readyYes').disabled=true;$('readyYes').textContent='You are ready ✓';
+    $('readyNo').textContent='Not ready yet';
     if(p2pChannel){
       if(role==='host'){
-        hostReady=!!val;
+        hostReady=true;
         if(broadcastP2PRoster)broadcastP2PRoster();
         return;
       }else{
-        mineReady=!!val;
-        $('readyYes').disabled=mineReady;$('readyYes').textContent=mineReady?'You are ready ✓':'Yes, ready!';
-        $('readyNo').textContent=mineReady?'Not ready yet':'No, not yet';
-        p2pChannel.send({type:'ready',value:!!val});
+        p2pChannel.send({type:'ready',value:true});
         return;
       }
     }
-    send({type:'ready',value:!!val});
+    send({type:'ready',value:true});
   }
   $('readyYes').onclick=function(){setReady(true);};
   $('readyNo').onclick=function(){setReady(false);};
-  readyDialog.addEventListener('cancel',function(e){e.preventDefault();setReady(false);});
+  readyDialog.addEventListener('cancel',function(){setReady(false);});
   var lastPong=0, peer=false, lastPeer=0, samples=[], busy=false, inviteCreation=0, lastStatus='';
   function status(text){if(lastStatus===text)return;lastStatus=text;badge.textContent=text;}
   function stopMotion(){game.stop();}
@@ -101,6 +124,8 @@ window.createCoastParty=function(game){
   }
   function updateRoster(players,nextStart){
     var other=players.find(function(p){return p.role!==role;}),mine=players.find(p=>p.role===role);
+    var newlyConnected=!peerWasConnected&&!!other;
+    peerWasConnected=!!other;
     peer=!!other;if(mine){myName=mine.name||myName;saveDriver();}if(other){peerName=other.name||'Friend';departedName='';}updateNames();mineReady=!!mine?.ready;
     if(nextStart){
       var startDelay=3200;
@@ -128,7 +153,12 @@ window.createCoastParty=function(game){
       $('readyMessage').textContent=mineReady?peerName+' is not yet ready. Waiting for their Yes.':peer?'Both drivers choose Yes to start.':'Share your invite. Both drivers must be here to begin.';
       $('readyYes').disabled=mineReady;$('readyYes').textContent=mineReady?'You are ready ✓':'Yes, ready!';
       $('readyNo').textContent=mineReady?'Not ready yet':'No, not yet';
-      if(peer)readiness();
+      if(newlyConnected){
+        readyDismissed=false;
+        readiness(true);
+      }else if(readyDialog.open){
+        readiness(true);
+      }
     }
     note.textContent=peer?'Your friend is here. Choose when to begin.':'Send this link to one friend. It stays available for 24 hours.';
   }
@@ -329,6 +359,11 @@ window.createCoastParty=function(game){
   async function openInvite(){
     if(role==='guest')return;
     if($('exitDialog').open)$('exitDialog').close();
+    try{
+      var prefHostName='';
+      try{prefHostName=localStorage.getItem('coast-preferred-name')||'';}catch{}
+      if(prefHostName && $('hostName') && $('hostName').value==='user1') $('hostName').value=prefHostName;
+    }catch{}
     if(!dialog.open)dialog.showModal();stopMotion();fillLink();
     if(inviteURL){note.textContent=peer?'Your friend is here. Enjoy the coast together.':'Share this link with one friend. Keep this page open.';return;}
     if(busy)return;var creation=++inviteCreation;busy=true;$('inviteTryAgain').hidden=true;
@@ -346,7 +381,7 @@ window.createCoastParty=function(game){
         data={room:randHex,invite:location.origin+targetPath+'?room='+randHex};
       }
       if(creation!==inviteCreation)return;
-      room=data.room;role='host';myName=playerName($('hostName').value,'user1');saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
+      room=data.room;role='host';myName=playerName($('hostName').value,'user1');try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
       game.place({x:2.4,y:0,z:0,h:0,v:0});
       history.replaceState(null,'',(map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);fillLink();
       note.textContent='Share this link with one friend. Keep this page open.';
@@ -391,7 +426,7 @@ window.createCoastParty=function(game){
   });
   retry.addEventListener('click',function(){stopped=false;attempts=0;if(room)connect();else openInvite();});
   function leave(){
-    inviteCreation++;busy=false;clearTimeout(nameTimer);stopped=true;closeSocket(true);room=null;role=null;peer=false;samples=[];inviteURL='';startAt=0;begunAt=null;mineReady=false;
+    inviteCreation++;busy=false;clearTimeout(nameTimer);stopped=true;closeSocket(true);room=null;role=null;peer=false;samples=[];inviteURL='';startAt=0;begunAt=null;mineReady=false;hostReady=false;guestReady=false;readyDismissed=false;peerWasConnected=false;
     history.replaceState(null,'',location.pathname);game.hidePeer();game.setRole('host');game.restoreRun(100,0);game.boost(0);game.restore([],{});
     retry.hidden=solo.hidden=true;invite.hidden=false;myName='user1';peerName='';departedName='';game.setNames('','');$('hostName').value='user1';status('');$('departureNotice').hidden=true;
     var l1=$('localDriverName'),l2=$('peerDriverName');if(l1)l1.hidden=true;if(l2)l2.hidden=true;
@@ -403,10 +438,18 @@ window.createCoastParty=function(game){
     // An invite alone is not a multiplayer race. Start solo until a guest joins.
     if(role==='host'&&!peer){leave();return false;}
     if(role==='guest'&&!peer&&!ready){
-      if(!nameDialog.open){nameDialog.showModal();$('guestName').focus();}
+      if(!nameDialog.open){
+        var prefName='';
+        try{prefName=localStorage.getItem('coast-preferred-name')||'';}catch{}
+        if(prefName)$('guestName').value=prefName;
+        nameDialog.showModal();
+        $('guestName').focus();
+        if(prefName)$('guestName').select();
+      }
       return true;
     }
-    readiness();return true;
+    readyDismissed=false;
+    readiness(true);return true;
   }
   solo.addEventListener('click',function(){leave();game.place({x:0,z:0,h:0,v:0});game.begin(game.now()+3000);});
   window.addEventListener('offline',function(){
@@ -433,11 +476,24 @@ window.createCoastParty=function(game){
       var saved=savedDriver();
       if(saved){
         myName=playerName(saved.name,saved.role==='host'?'user1':'user2');
-        $('hostName').value=myName;game.setRole(saved.role||'guest');updateNames();connect();
-      }else{
-        myName='user2';role='guest';game.setRole('guest');updateNames();
-        updateMenuButtons(true);
+        if(saved.role==='host')$('hostName').value=myName;
+        else $('guestName').value=myName;
+        role=saved.role||'guest';
+        game.setRole(role);
+        updateNames();
         connect();
+      }else{
+        role='guest';
+        game.setRole('guest');
+        var prefName='';
+        try{prefName=localStorage.getItem('coast-preferred-name')||'';}catch{}
+        if(prefName)$('guestName').value=prefName;
+        myName=playerName(prefName,'user2');
+        updateNames();
+        updateMenuButtons(true);
+        nameDialog.showModal();
+        $('guestName').focus();
+        if(prefName)$('guestName').select();
       }
     }
   }else status('');
