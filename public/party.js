@@ -89,12 +89,24 @@ window.createCoastParty=function(game){
   }
   function updateRoster(players,nextStart){
     var other=players.find(function(p){return p.role!==role;}),mine=players.find(p=>p.role===role);
-    peer=!!other;if(mine){myName=mine.name||myName;saveDriver();}if(other){peerName=other.name||'Friend';departedName='';}updateNames();mineReady=!!mine?.ready;startAt=nextStart||0;
+    peer=!!other;if(mine){myName=mine.name||myName;saveDriver();}if(other){peerName=other.name||'Friend';departedName='';}updateNames();mineReady=!!mine?.ready;
+    if(nextStart){
+      var startDelay=3200;
+      if(nextStart>1000000000){
+        startDelay=Math.max(500,Math.min(5000,nextStart-Date.now()));
+      }else if(nextStart>0&&nextStart<15000){
+        startDelay=nextStart;
+      }
+      startAt=game.now()+startDelay;
+    }else{
+      startAt=0;
+    }
     if(other){lastPeer=performance.now();samples=[{t:lastPeer,pose:other.pose}];game.showPeer(other.pose);}
     else{samples=[];game.hidePeer();}
     if(!startAt&&mine)game.place(mine.pose);
     if(startAt){
-      if(dialog.open)dialog.close();if(readyDialog.open)readyDialog.close();status(!peer&&departedName?departedName+' left':'');
+      document.querySelectorAll('dialog').forEach(d=>{try{if(d.open)d.close();}catch(e){}d.removeAttribute('open');});
+      status(!peer&&departedName?departedName+' left':'');
       if(begunAt!==startAt){begunAt=startAt;game.begin(startAt);}
     }else{
       if(mine)game.restoreRun(mine.health,mine.distance,mine.race,mine.fuel);
@@ -165,18 +177,14 @@ window.createCoastParty=function(game){
     };
 
     broadcastP2PRoster=function(){
-      if(hostReady&&guestReady){
-        startAt=performance.now()+3200;
-      }else{
-        startAt=0;
-      }
+      var bothReady=hostReady&&guestReady;
       var rosterMsg={
         type:'roster',
         players:[
           {role:'host',name:myName,ready:hostReady,pose:game.pose()},
           {role:'guest',name:peerName,ready:guestReady,pose:{x:-1.8,y:0,z:0,h:0,v:0}}
         ],
-        startAt:startAt
+        startAt:bothReady?3200:0
       };
       p2pChannel.send(rosterMsg);
       handleMessage(rosterMsg);
