@@ -28,6 +28,7 @@ window.createCoastParty=function(game){
   $('cancelJoin').onclick=()=>{nameDialog.close();leave();};
   nameDialog.addEventListener('cancel',e=>{e.preventDefault();nameDialog.close();leave();});
   var startAt=0,begunAt=null,mineReady=false,readyDialog=$('readyDialog'),p2pChannel=null;
+  var hostReady=false,guestReady=false,broadcastP2PRoster=null,activePeer=null;
   function send(m){
     if(!ready)return;
     if(m && !m._tab) m._tab=tabLabel;
@@ -39,9 +40,26 @@ window.createCoastParty=function(game){
     if(startAt&&game.now()>=startAt)return;
     if(dialog.open)dialog.close();if(!readyDialog.open)readyDialog.showModal();
   }
-  $('readyYes').onclick=function(){game.unlock();send({type:'ready',value:true});};
-  $('readyNo').onclick=function(){send({type:'ready',value:false});};
-  readyDialog.addEventListener('cancel',function(e){e.preventDefault();send({type:'ready',value:false});});
+  function setReady(val){
+    game.unlock();
+    if(p2pChannel){
+      if(role==='host'){
+        hostReady=!!val;
+        if(broadcastP2PRoster)broadcastP2PRoster();
+        return;
+      }else{
+        mineReady=!!val;
+        $('readyYes').disabled=mineReady;$('readyYes').textContent=mineReady?'You are ready ✓':'Yes, ready!';
+        $('readyNo').textContent=mineReady?'Not ready yet':'No, not yet';
+        p2pChannel.send({type:'ready',value:!!val});
+        return;
+      }
+    }
+    send({type:'ready',value:!!val});
+  }
+  $('readyYes').onclick=function(){setReady(true);};
+  $('readyNo').onclick=function(){setReady(false);};
+  readyDialog.addEventListener('cancel',function(e){e.preventDefault();setReady(false);});
   var lastPong=0, peer=false, lastPeer=0, samples=[], busy=false, inviteCreation=0, lastStatus='';
   function status(text){if(lastStatus===text)return;lastStatus=text;badge.textContent=text;}
   function stopMotion(){game.stop();}
@@ -55,6 +73,8 @@ window.createCoastParty=function(game){
   }
   function closeSocket(graceful=false){
     generation++;clearTimeout(reconnectTimer);clearTimeout(connectTimer);clearInterval(pingTimer);
+    hostReady=false;guestReady=false;broadcastP2PRoster=null;
+    if(activePeer){try{activePeer.destroy();}catch{}activePeer=null;}
     if(p2pChannel){try{p2pChannel.close();}catch{}p2pChannel=null;}
     if(socket){socket.onclose=socket.onmessage=socket.onerror=null;if(graceful&&socket.readyState===1){var outgoing=socket;outgoing.send(JSON.stringify({type:'exit'}));outgoing.onmessage=e=>{try{if(JSON.parse(e.data).type==='exited')outgoing.close();}catch{}};setTimeout(()=>outgoing.close(),1500);}else socket.close();socket=null;}
     ready=false;
@@ -144,19 +164,36 @@ window.createCoastParty=function(game){
       }
     };
 
+    broadcastP2PRoster=function(){
+      if(hostReady&&guestReady){
+        startAt=performance.now()+3200;
+      }else{
+        startAt=0;
+      }
+      var rosterMsg={
+        type:'roster',
+        players:[
+          {role:'host',name:myName,ready:hostReady,pose:game.pose()},
+          {role:'guest',name:peerName,ready:guestReady,pose:{x:-1.8,y:0,z:0,h:0,v:0}}
+        ],
+        startAt:startAt
+      };
+      p2pChannel.send(rosterMsg);
+      handleMessage(rosterMsg);
+    };
+
     function onIncomingData(raw){
       if(current!==generation || stopped)return;
       var m;try{m=typeof raw==='string'?JSON.parse(raw):raw;}catch{return;}
       if(m._tab===tabLabel)return;
       if(m.type==='join'&&isHost){
         peer=true;peerName=m.name||'Friend';updateNames();
+        hostReady=false;guestReady=false;
         var guestPose={x:-1.8,y:0,z:0,h:0,v:0};
         var hostPose=game.pose();
         var welcomeMsg={type:'welcome',role:'guest',name:m.name,pose:guestPose,health:100,distance:0,race:1,fuel:100,startAt:0,_forTab:m._tab};
         p2pChannel.send(welcomeMsg);
-        var rosterMsg={type:'roster',players:[{role:'host',name:myName,ready:mineReady,pose:hostPose},{role:'guest',name:peerName,ready:false,pose:guestPose}],startAt:0};
-        p2pChannel.send(rosterMsg);
-        handleMessage(rosterMsg);
+        broadcastP2PRoster();
         return;
       }
       if(m.type==='welcome'&&!isHost){
@@ -166,17 +203,8 @@ window.createCoastParty=function(game){
         return;
       }
       if(m.type==='ready'&&isHost){
-        var guestReady=!!m.value;
-        if(guestReady&&mineReady){
-          startAt=performance.now()+3500;
-          var startRoster={type:'roster',players:[{role:'host',name:myName,ready:true,pose:game.pose()},{role:'guest',name:peerName,ready:true,pose:{x:-1.8,y:0,z:0,h:0,v:0}}],startAt:startAt};
-          p2pChannel.send(startRoster);
-          handleMessage(startRoster);
-        }else{
-          var rosterMsg={type:'roster',players:[{role:'host',name:myName,ready:mineReady,pose:game.pose()},{role:'guest',name:peerName,ready:guestReady,pose:{x:-1.8,y:0,z:0,h:0,v:0}}],startAt:0};
-          p2pChannel.send(rosterMsg);
-          handleMessage(rosterMsg);
-        }
+        guestReady=!!m.value;
+        broadcastP2PRoster();
         return;
       }
       handleMessage(m);
@@ -186,20 +214,26 @@ window.createCoastParty=function(game){
 
     try{
       if(typeof Peer!=='undefined'){
-        var pInst=isHost?new Peer('coast-'+room):new Peer();
+        var peerId=isHost?('coast-'+room):undefined;
+        var pInst=peerId?new Peer(peerId):new Peer();
+        activePeer=pInst;
         pInst.on('open',function(){
           if(!isHost){
-            var conn=pInst.connect('coast-'+room);
+            var conn=pInst.connect('coast-'+room,{reliable:true});
             conn.on('open',function(){peers.push(conn);p2pChannel.send({type:'join',name:myName,_tab:tabLabel});});
             conn.on('data',onIncomingData);
+            conn.on('close',function(){var idx=peers.indexOf(conn);if(idx!==-1)peers.splice(idx,1);});
           }
         });
         pInst.on('connection',function(conn){
           peers.push(conn);
+          conn.on('open',function(){if(isHost&&peer&&broadcastP2PRoster)broadcastP2PRoster();});
           conn.on('data',onIncomingData);
+          conn.on('close',function(){var idx=peers.indexOf(conn);if(idx!==-1)peers.splice(idx,1);peer=false;handleMessage({type:'playerLeft',name:peerName});});
         });
+        pInst.on('error',function(err){console.warn('PeerJS info:',err.type||err);});
       }
-    }catch{}
+    }catch(e){console.warn('PeerJS init:',e);}
 
     ready=true;retry.hidden=solo.hidden=true;
     document.body.classList.add('in-party');
