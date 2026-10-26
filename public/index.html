@@ -45,7 +45,7 @@
       <div class="guide-group"><div class="guide-keys"><kbd class="space-key">SPACE</kbd></div><p>Brake</p></div>
     </div>
   </div>
-  <div class="drive-tools"><button class="tool-button" id="mainMenu" type="button">MAIN MENU</button><button class="tool-button" id="toggleMirror" type="button" aria-pressed="false" title="Toggle rear-view mirror (M)">MIRROR OFF · M</button><button class="tool-button" id="muteDrive" type="button" aria-pressed="true">SOUND OFF</button><button class="tool-button" id="feedbackButton" type="button">FEEDBACK</button></div>
+  <div class="drive-tools"><button class="tool-button" id="mainMenu" type="button">MAIN MENU</button><button class="tool-button" id="toggleMirror" type="button" aria-pressed="false" title="Toggle rear-view mirror (M)">MIRROR OFF · M</button><button class="tool-button" id="muteDrive" type="button" aria-pressed="true">SOUND OFF</button></div>
   <div class="party-bar"><span id="partyStatus" role="status" aria-live="polite"></span><button id="partyRetry" type="button" hidden>Try again</button><button id="partySolo" type="button" hidden>Drive solo</button></div>
   <dialog id="inviteDialog" aria-labelledby="inviteTitle" aria-describedby="inviteDescription">
     <button id="closeInvite" type="button" aria-label="Close invite window" autofocus><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"></line><line x1="10" y1="2" x2="2" y2="10"></line></svg></button>
@@ -63,17 +63,7 @@
   <dialog id="readyDialog" aria-labelledby="readyTitle"><span class="dialog-kicker">A COAST FOR TWO</span><h2 id="readyTitle">Friend joined — are you ready?</h2><p id="readyMessage" role="status">Both drivers choose Yes to start.</p><div class="dialog-actions"><button id="readyYes">Yes, ready!</button><button id="readyNo">No, not yet</button></div></dialog>
   <dialog id="exitDialog" aria-labelledby="exitTitle"><h2 id="exitTitle">Return to the main menu?</h2><p>Your current drive will end.</p><div class="dialog-actions"><button id="exitYes">Yes, exit</button><button id="exitNo" autofocus>No, keep driving</button></div></dialog>
 <dialog id="finishDialog" aria-labelledby="finishTitle"><span class="dialog-kicker">COAST HORIZON</span><h2 id="finishTitle">Coast complete!</h2><p id="finishMessage"></p><div class="dialog-actions"><button id="finishAgain">Start again</button><button id="finishMenu">Main menu</button></div></dialog>
-  <dialog id="feedbackDialog" aria-labelledby="feedbackTitle">
-    <h2 id="feedbackTitle">Your feedback</h2>
-    <form id="feedbackForm">
-      <label for="feedbackName">Name</label><input id="feedbackName" name="name" autocomplete="name" maxlength="100" required>
-      <label for="feedbackEmail">Email</label><input id="feedbackEmail" name="email" type="email" autocomplete="email" maxlength="254" required>
-      <label for="feedbackMessage">Message</label><textarea id="feedbackMessage" name="message" placeholder="What are your thoughts about the game?" maxlength="5000" rows="5" required></textarea>
-      <div class="feedback-trap" aria-hidden="true"><label for="feedbackWebsite">Website</label><input id="feedbackWebsite" name="website" tabindex="-1" autocomplete="off"></div>
-      <p id="feedbackStatus" role="status" aria-live="polite"></p>
-      <div class="dialog-actions"><button id="feedbackSend" type="submit">Send</button><button id="feedbackCancel" type="button">Cancel</button></div>
-    </form>
-  </dialog>
+
   <div id="countdown" hidden role="status" aria-live="assertive"></div>
   <div id="hud" aria-hidden="true">
 
@@ -113,7 +103,6 @@
 <script src="/three.min.js"></script>
 <script src="/analytics.js"></script>
 <script type="module" src="/party.js"></script>
-<script src="/feedback.js"></script>
 <script type="module">
 import * as route from "/route.js";
 import {START_SEQUENCE_MS,racePosition,raceTime,countdownText} from "/race-grid.js";
@@ -1080,7 +1069,6 @@ async function start(saved){
     document.getElementById('finishMenu').onclick=function(){document.getElementById('finishDialog').close();mainMenu();};
     document.getElementById('finishDialog').addEventListener('cancel',function(e){e.preventDefault();});
     var exitDialog=document.getElementById('exitDialog');
-    document.getElementById('feedbackButton').addEventListener('click',function(){keys=Object.create(null);touch.gas=touch.brake=touch.left=touch.right=false;});
     document.getElementById('mainMenu').onclick=function(){keys=Object.create(null);touch.gas=touch.brake=touch.left=touch.right=false;exitDialog.showModal();};
     document.getElementById('exitNo').onclick=function(){exitDialog.close();};
     document.getElementById('exitYes').onclick=function(){exitDialog.close();mainMenu();};

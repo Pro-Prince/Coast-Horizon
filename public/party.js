@@ -230,14 +230,14 @@ window.createCoastParty=function(game){
     }
     socket=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws/'+room+('?tab='+tabLabel));
     var ws=socket;
-    connectTimer=setTimeout(function(){if(!ready)ws.close();},12000);
+    connectTimer=setTimeout(function(){if(!ready)ws.close();},6000);
     ws.onmessage=function(event){
       if(current!==generation)return;
       if(event.data==='__pong'){lastPong=Date.now();return;}
       var m;try{m=JSON.parse(event.data);}catch{return;}
       handleMessage(m);
     };
-    ws.onerror=function(){};
+    ws.onerror=function(){try{ws.close();}catch{}};
     ws.onclose=function(event){
       if(current!==generation || stopped)return;
       if(event.code===4001){stopped=true;closeSocket();showError('replaced');return;}
@@ -248,9 +248,9 @@ window.createCoastParty=function(game){
   function reconnect(){
     closeSocket();stopMotion();game.hidePeer();peer=false;samples=[];
     if(stopped)return;
-    if(++attempts>5){initP2P(generation);return;}
+    if(++attempts>2){initP2P(generation);return;}
     status('Connection lost · reconnecting…');solo.hidden=false;
-    reconnectTimer=setTimeout(connect,Math.min(8000,500*Math.pow(2,attempts-1)));
+    reconnectTimer=setTimeout(connect,Math.min(3000,500*Math.pow(2,attempts-1)));
   }
   function fillLink(){link.value=inviteURL;copy.disabled=!inviteURL;copy.textContent='Copy link';}
   async function openInvite(){

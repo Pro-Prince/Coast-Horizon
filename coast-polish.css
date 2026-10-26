@@ -68,7 +68,7 @@ body:not(.is-playing) #toggleMirror{display:none}
 #mirrorFrame[hidden]{display:none}
 body.mirror-hidden #condition{top:24px}
 @media(max-width:1100px){body.mirror-hidden #condition{top:68px}}
-@media(max-width:600px){.is-playing .drive-tools{top:50px;right:12px;gap:4px}body.mirror-hidden #condition{top:88px}body:not(.mirror-hidden) #mirrorFrame{top:88px}body:not(.mirror-hidden) #condition{top:179px}.is-playing .drive-tools .tool-button{padding:0 7px;font-size:10px}}
+@media(max-width:700px){body:not(.santa-monica) .drive-tools{top:14px;right:14px;gap:5px}body:not(.santa-monica) .tool-button{padding:0 8px;font-size:10px;height:26px;line-height:24px}.is-playing .drive-tools{top:14px;right:14px;gap:5px}.is-playing .drive-tools .tool-button{padding:0 8px;font-size:10px;height:26px;line-height:24px}body.mirror-hidden #condition{top:48px}body:not(.mirror-hidden) #mirrorFrame{top:48px}body:not(.mirror-hidden) #condition{top:136px}}
 
 /* Clear, aligned race labels and an unobstructed boost countdown. */
 body:not(.santa-monica) #lapReadout{background:none;border:0;box-shadow:none;padding:0;color:#174b41;text-shadow:0 1px 3px #fff8dbaa}
@@ -76,8 +76,8 @@ body:not(.santa-monica) #regionReadout{left:30px;top:58px;padding:0;background:n
 #pickupNotices #boostBanner{background:none;border:0;box-shadow:none;text-shadow:0 2px 5px #123e56;font-size:38px;padding:0 12px}
 #fuelGauge{position:fixed;z-index:5;right:30px;bottom:28px;width:145px;padding:12px 15px;border:1px solid #fff8daaa;border-radius:18px;background:#173e38dc;color:#fff2be;font:16px/1.25 Bayon,sans-serif;pointer-events:none}
 #fuelGauge[hidden]{display:none}#fuelGauge span{display:flex;gap:8px;justify-content:space-between}#fuelGauge strong{font-weight:400}#fuelGauge meter{display:block;width:100%;height:12px;margin:7px 0;accent-color:#ffe59b}#fuelGauge small{font-size:11px;letter-spacing:.03em}#fuelGauge.low{color:#ffbb85;border-color:#ffbb85}
-@media(max-width:700px){body:not(.santa-monica) #regionReadout{left:12px;top:44px}#fuelGauge{right:16px;bottom:170px;width:112px;padding:8px 10px;font-size:13px}}
-@media(pointer:coarse){#fuelGauge{bottom:170px}}
+@media(max-width:700px){body:not(.santa-monica) #regionReadout{left:14px;top:38px}#fuelGauge{right:16px;bottom:142px;width:104px;padding:6px 9px;font-size:12px;border-radius:14px}#fuelGauge meter{height:7px;margin:4px 0 3px}#fuelGauge small{font-size:10px}}
+@media(pointer:coarse){#fuelGauge{bottom:142px}}
 
 #fuelGauge meter::-webkit-meter-bar{background:#627b6c;border:0}#fuelGauge meter::-webkit-meter-optimum-value{background:#ffe59b}#fuelGauge meter::-webkit-meter-suboptimum-value{background:#ffad70}
 
