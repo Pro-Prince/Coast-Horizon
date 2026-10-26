@@ -34,17 +34,17 @@ body:not(.santa-monica) input:focus-visible,body:not(.santa-monica) textarea:foc
 @media(max-width:700px){
  body:not(.santa-monica) .menu-heading{top:16px;left:18px;max-width:calc(100% - 210px)}
  body:not(.santa-monica) .menu-tagline{font-size:11px;line-height:17px}
- body:not(.santa-monica) .drive-tools{top:16px;right:16px;gap:6px}
- body:not(.santa-monica) .tool-button{padding:0 11px;font-size:11px;height:28px;line-height:26px}
+ body:not(.santa-monica) .drive-tools{top:12px;right:12px;gap:5px}
+ body:not(.santa-monica) .tool-button{padding:0 8px;font-size:10px;height:24px;line-height:22px}
  body:not(.santa-monica) .menu-title{top:17%;font-size:58px}
  body:not(.santa-monica) .menu-actions{width:calc(100% - 44px);gap:14px;bottom:140px}
  body:not(.santa-monica) .menu-actions .menu-start{width:calc(50% - 7px);flex:1;gap:8px}
  body:not(.santa-monica) .menu-start-key{height:55px;font-size:25px}
- body:not(.santa-monica) #lapReadout{top:16px;left:14px;height:28px;font-size:12px;padding:0 10px}
- body:not(.santa-monica) #lapReadout small{top:31px}
+ body:not(.santa-monica) #lapReadout{top:12px;left:12px;height:24px;font-size:11px;padding:0 8px}
+ body:not(.santa-monica) #lapReadout small{display:none}
  body:not(.santa-monica) .keyboard-guide{bottom:26px;width:calc(100% - 30px)}
 }
-@media(pointer:coarse){body:not(.santa-monica) .menu-actions{bottom:max(64px,env(safe-area-inset-bottom))}body:not(.santa-monica):not(.is-playing) .party-bar{bottom:15px}}
+@media(pointer:coarse){body:not(.santa-monica) .menu-actions{bottom:max(92px,calc(env(safe-area-inset-bottom) + 84px))}body:not(.santa-monica):not(.is-playing) .party-bar{bottom:max(16px,env(safe-area-inset-bottom))}}
 @media(max-height:650px) and (min-width:701px){body:not(.santa-monica) .menu-title{top:12%;font-size:60px}body:not(.santa-monica) .menu-actions{bottom:100px}body:not(.santa-monica) .menu-start-key{height:48px;font-size:25px}body:not(.santa-monica) .keyboard-guide{bottom:8px;height:50px}body:not(.santa-monica):not(.is-playing) .party-bar{bottom:72px}}
 
 #stuntBanner{position:absolute;right:30px;top:82px;display:flex;flex-direction:column;align-items:center;min-width:132px;padding:12px 18px;border:1px solid #fff5c499;border-radius:18px;background:#19483bd9;color:#ffedb2;box-shadow:0 5px 24px #153d3522}
@@ -76,8 +76,8 @@ body:not(.santa-monica) #regionReadout{left:30px;top:58px;padding:0;background:n
 #pickupNotices #boostBanner{background:none;border:0;box-shadow:none;text-shadow:0 2px 5px #123e56;font-size:38px;padding:0 12px}
 #fuelGauge{position:fixed;z-index:5;right:30px;bottom:28px;width:145px;padding:12px 15px;border:1px solid #fff8daaa;border-radius:18px;background:#173e38dc;color:#fff2be;font:16px/1.25 Bayon,sans-serif;pointer-events:none}
 #fuelGauge[hidden]{display:none}#fuelGauge span{display:flex;gap:8px;justify-content:space-between}#fuelGauge strong{font-weight:400}#fuelGauge meter{display:block;width:100%;height:12px;margin:7px 0;accent-color:#ffe59b}#fuelGauge small{font-size:11px;letter-spacing:.03em}#fuelGauge.low{color:#ffbb85;border-color:#ffbb85}
-@media(max-width:700px){body:not(.santa-monica) #regionReadout{left:14px;top:44px}#fuelGauge{right:14px;bottom:18px;width:116px;padding:9px 12px;font-size:14px}}
-@media(pointer:coarse){#fuelGauge{bottom:132px}}
+@media(max-width:700px){body:not(.santa-monica) #regionReadout{left:12px;top:44px}#fuelGauge{right:16px;bottom:170px;width:112px;padding:8px 10px;font-size:13px}}
+@media(pointer:coarse){#fuelGauge{bottom:170px}}
 
 #fuelGauge meter::-webkit-meter-bar{background:#627b6c;border:0}#fuelGauge meter::-webkit-meter-optimum-value{background:#ffe59b}#fuelGauge meter::-webkit-meter-suboptimum-value{background:#ffad70}
 

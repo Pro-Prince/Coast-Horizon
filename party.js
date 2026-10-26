@@ -27,8 +27,13 @@ window.createCoastParty=function(game){
   $('guestName').oninput=()=>$('guestName').setCustomValidity('');
   $('cancelJoin').onclick=()=>{nameDialog.close();leave();};
   nameDialog.addEventListener('cancel',e=>{e.preventDefault();nameDialog.close();leave();});
-  var startAt=0,begunAt=null,mineReady=false,readyDialog=$('readyDialog');
-  function send(m){if(ready&&socket&&socket.readyState===1)socket.send(JSON.stringify(m));}
+  var startAt=0,begunAt=null,mineReady=false,readyDialog=$('readyDialog'),p2pChannel=null;
+  function send(m){
+    if(!ready)return;
+    if(m && !m._tab) m._tab=tabLabel;
+    if(socket && socket.readyState===1)socket.send(JSON.stringify(m));
+    else if(p2pChannel)p2pChannel.send(m);
+  }
   function readiness(){
     game.unlock();if(!ready)return;
     if(startAt&&game.now()>=startAt)return;
@@ -50,6 +55,7 @@ window.createCoastParty=function(game){
   }
   function closeSocket(graceful=false){
     generation++;clearTimeout(reconnectTimer);clearTimeout(connectTimer);clearInterval(pingTimer);
+    if(p2pChannel){try{p2pChannel.close();}catch{}p2pChannel=null;}
     if(socket){socket.onclose=socket.onmessage=socket.onerror=null;if(graceful&&socket.readyState===1){var outgoing=socket;outgoing.send(JSON.stringify({type:'exit'}));outgoing.onmessage=e=>{try{if(JSON.parse(e.data).type==='exited')outgoing.close();}catch{}};setTimeout(()=>outgoing.close(),1500);}else socket.close();socket=null;}
     ready=false;
   }
@@ -82,12 +88,146 @@ window.createCoastParty=function(game){
     }
     note.textContent=peer?'Your friend is here. Choose when to begin.':'Send this link to one friend. It stays available for 24 hours.';
   }
+  function handleMessage(m){
+    if(m.type==='error'){stopped=true;closeSocket();showError(m.code);return;}
+    if(m.type==='welcome'){
+      if(m.map&&m.map!==map){location.replace((m.map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);return;}
+      clearTimeout(connectTimer);role=m.role;ready=true;attempts=0;seq=0;healthRevision=m.healthRevision||0;myName=myName||m.name;saveDriver();updateNames();if(nameDialog.open)nameDialog.close();send({type:'profile',name:myName});
+      retry.hidden=solo.hidden=true;document.body.classList.add('in-party');
+      if(game.syncWorld && Number.isFinite(m.worldTime))game.syncWorld(m.worldTime);
+      game.restoreRun(m.health,m.distance,m.race,m.fuel);game.restore(m.impacts,m.cooldowns);game.restoreRaceWorld?.(m.raceWorld);game.boost(m.boostUntil||0);game.setRole(role);game.place(m.pose);begunAt=null;startAt=m.startAt||0;
+      if(role==='guest'){invite.hidden=true;}
+      status(role==='host'?'Waiting for your friend · you are red':'Connected · you are blue');
+      lastPong=Date.now();
+      pingTimer=setInterval(function(){
+        if(localTest && document.hidden)return;
+        if(socket && Date.now()-lastPong>20000){socket.close();return;}
+        if(socket && socket.readyState===1)socket.send('__ping');
+      },5000);
+    }
+    if(m.type==='playerLeft'){departedName=m.name||peerName||'Friend';$('departureNotice').textContent=departedName+' left';$('departureNotice').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('departureNotice').hidden=true,9000);}
+    if(m.type==='roster')updateRoster(m.players,m.startAt);
+    if(m.type==='raceWorld')game.restoreRaceWorld?.(m.world);
+    if(m.type==='fuel'){game.pickup(m.pickup,m.available);if(m.role===role)game.refuel(m.fuel);}
+    if(m.type==='pose'&&m.role===role)game.fuelSync(m.pose.fuel);
+    if(m.type==='boost'){game.pickup(m.pickup,m.available);if(m.role===role)game.boost(m.until);}
+    if(m.type==='race'&&m.role===role)game.restoreRace(m.race);
+    if(m.type==='repair'){game.pickup(m.pickup,m.available);if(m.role===role){healthRevision=m.healthRevision;game.repair(m.health,m.amount);}}
+    if(m.type==='boostRejected'||m.type==='repairRejected'||m.type==='fuelRejected'){game.pickup(m.pickup,game.now()+1000);}
+    if(m.type==='condition'&&m.role===role)game.condition(m.health);
+    if(m.type==='impact'&&(m.target!=='peer'||m.role===role))game.impact(m);
+    if(m.type==='pose' && m.role!==role){
+      peer=true;lastPeer=performance.now();
+      samples.push({t:lastPeer,pose:m.pose});if(samples.length>12)samples.shift();
+    }
+    if(m.type==='restarted')game.restart(m.pose);
+    if(m.type==='reset'||m.type==='correction'){game.place(m.pose);game.restoreRace(m.race);}
+  }
+
+  function initP2P(current){
+    if(current!==generation || stopped)return;
+    var bc=null;
+    try{if(typeof BroadcastChannel!=='undefined')bc=new BroadcastChannel('coast_room_'+room);}catch{}
+    var peers=[];
+    var isHost=role==='host';
+
+    p2pChannel={
+      send:function(msg){
+        var data=JSON.stringify(msg);
+        if(bc){try{bc.postMessage(data);}catch{}}
+        for(var i=0;i<peers.length;i++){try{if(peers[i].open)peers[i].send(data);}catch{}}
+      },
+      close:function(){
+        if(bc){try{bc.close();}catch{}bc=null;}
+        for(var i=0;i<peers.length;i++){try{peers[i].close();}catch{}}
+        peers=[];p2pChannel=null;
+      }
+    };
+
+    function onIncomingData(raw){
+      if(current!==generation || stopped)return;
+      var m;try{m=typeof raw==='string'?JSON.parse(raw):raw;}catch{return;}
+      if(m._tab===tabLabel)return;
+      if(m.type==='join'&&isHost){
+        peer=true;peerName=m.name||'Friend';updateNames();
+        var guestPose={x:-1.8,y:0,z:0,h:0,v:0};
+        var hostPose=game.pose();
+        var welcomeMsg={type:'welcome',role:'guest',name:m.name,pose:guestPose,health:100,distance:0,race:1,fuel:100,startAt:0,_forTab:m._tab};
+        p2pChannel.send(welcomeMsg);
+        var rosterMsg={type:'roster',players:[{role:'host',name:myName,ready:mineReady,pose:hostPose},{role:'guest',name:peerName,ready:false,pose:guestPose}],startAt:0};
+        p2pChannel.send(rosterMsg);
+        handleMessage(rosterMsg);
+        return;
+      }
+      if(m.type==='welcome'&&!isHost){
+        if(m._forTab&&m._forTab!==tabLabel)return;
+        role='guest';ready=true;attempts=0;clearTimeout(connectTimer);
+        handleMessage(m);
+        return;
+      }
+      if(m.type==='ready'&&isHost){
+        var guestReady=!!m.value;
+        if(guestReady&&mineReady){
+          startAt=performance.now()+3500;
+          var startRoster={type:'roster',players:[{role:'host',name:myName,ready:true,pose:game.pose()},{role:'guest',name:peerName,ready:true,pose:{x:-1.8,y:0,z:0,h:0,v:0}}],startAt:startAt};
+          p2pChannel.send(startRoster);
+          handleMessage(startRoster);
+        }else{
+          var rosterMsg={type:'roster',players:[{role:'host',name:myName,ready:mineReady,pose:game.pose()},{role:'guest',name:peerName,ready:guestReady,pose:{x:-1.8,y:0,z:0,h:0,v:0}}],startAt:0};
+          p2pChannel.send(rosterMsg);
+          handleMessage(rosterMsg);
+        }
+        return;
+      }
+      handleMessage(m);
+    }
+
+    if(bc)bc.onmessage=function(ev){onIncomingData(ev.data);};
+
+    try{
+      if(typeof Peer!=='undefined'){
+        var pInst=isHost?new Peer('coast-'+room):new Peer();
+        pInst.on('open',function(){
+          if(!isHost){
+            var conn=pInst.connect('coast-'+room);
+            conn.on('open',function(){peers.push(conn);p2pChannel.send({type:'join',name:myName,_tab:tabLabel});});
+            conn.on('data',onIncomingData);
+          }
+        });
+        pInst.on('connection',function(conn){
+          peers.push(conn);
+          conn.on('data',onIncomingData);
+        });
+      }
+    }catch{}
+
+    ready=true;retry.hidden=solo.hidden=true;
+    document.body.classList.add('in-party');
+    if(isHost){
+      status('Waiting for your friend · you are red');
+      game.setRole('host');updateNames();
+    }else{
+      status('Joining your shared drive…');
+      game.setRole('guest');updateNames();
+      p2pChannel.send({type:'join',name:myName,_tab:tabLabel});
+      var joinPulse=setInterval(function(){
+        if(peer||(ready&&role==='guest'&&begunAt)||stopped||current!==generation){clearInterval(joinPulse);return;}
+        p2pChannel.send({type:'join',name:myName,_tab:tabLabel});
+      },1000);
+    }
+  }
+
   async function connect(){
     if(!room || stopped||nameDialog.open)return;
     closeSocket();var current=generation;
     status(attempts?'Reconnecting…':'Joining your shared drive…');retry.hidden=true;
-    try{await api('/api/session');}catch{if(current===generation)reconnect();return;}
+    var hasServer=false;
+    try{var session=await api('/api/session');if(session)hasServer=true;}catch{}
     if(current!==generation || stopped)return;
+    if(!hasServer){
+      initP2P(current);
+      return;
+    }
     socket=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws/'+room+('?tab='+tabLabel));
     var ws=socket;
     connectTimer=setTimeout(function(){if(!ready)ws.close();},12000);
@@ -95,41 +235,9 @@ window.createCoastParty=function(game){
       if(current!==generation)return;
       if(event.data==='__pong'){lastPong=Date.now();return;}
       var m;try{m=JSON.parse(event.data);}catch{return;}
-      if(m.type==='error'){stopped=true;closeSocket();showError(m.code);return;}
-      if(m.type==='welcome'){
-        if(m.map&&m.map!==map){location.replace((m.map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);return;}
-        clearTimeout(connectTimer);role=m.role;ready=true;attempts=0;seq=0;healthRevision=m.healthRevision||0;myName=myName||m.name;saveDriver();updateNames();if(nameDialog.open)nameDialog.close();send({type:'profile',name:myName});
-        retry.hidden=solo.hidden=true;
-        if(game.syncWorld && Number.isFinite(m.worldTime))game.syncWorld(m.worldTime);
-        game.restoreRun(m.health,m.distance,m.race,m.fuel);game.restore(m.impacts,m.cooldowns);game.restoreRaceWorld?.(m.raceWorld);game.boost(m.boostUntil||0);game.setRole(role);game.place(m.pose);begunAt=null;startAt=m.startAt||0;
-        if(role==='guest'){invite.hidden=true;}
-        status(role==='host'?'Waiting for your friend · you are red':'Connected · you are blue');
-        lastPong=Date.now();
-        pingTimer=setInterval(function(){
-          if(localTest && document.hidden)return;
-          if(Date.now()-lastPong>20000){ws.close();return;}
-          if(ws.readyState===1)ws.send('__ping');
-        },5000);
-      }
-      if(m.type==='playerLeft'){departedName=m.name||peerName||'Friend';$('departureNotice').textContent=departedName+' left';$('departureNotice').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('departureNotice').hidden=true,9000);}
-      if(m.type==='roster')updateRoster(m.players,m.startAt);
-      if(m.type==='raceWorld')game.restoreRaceWorld?.(m.world);
-      if(m.type==='fuel'){game.pickup(m.pickup,m.available);if(m.role===role)game.refuel(m.fuel);}
-      if(m.type==='pose'&&m.role===role)game.fuelSync(m.pose.fuel);
-      if(m.type==='boost'){game.pickup(m.pickup,m.available);if(m.role===role)game.boost(m.until);}
-      if(m.type==='race'&&m.role===role)game.restoreRace(m.race);
-      if(m.type==='repair'){game.pickup(m.pickup,m.available);if(m.role===role){healthRevision=m.healthRevision;game.repair(m.health,m.amount);}}
-      if(m.type==='boostRejected'||m.type==='repairRejected'||m.type==='fuelRejected'){game.pickup(m.pickup,game.now()+1000);}
-      if(m.type==='condition'&&m.role===role)game.condition(m.health);
-      if(m.type==='impact'&&(m.target!=='peer'||m.role===role))game.impact(m);
-      if(m.type==='pose' && m.role!==role){
-        peer=true;lastPeer=performance.now();
-        samples.push({t:lastPeer,pose:m.pose});if(samples.length>12)samples.shift();
-      }
-      if(m.type==='restarted')game.restart(m.pose);
-      if(m.type==='reset'||m.type==='correction'){game.place(m.pose);game.restoreRace(m.race);}
+      handleMessage(m);
     };
-    ws.onerror=function(){/* close delivers one retry path */};
+    ws.onerror=function(){};
     ws.onclose=function(event){
       if(current!==generation || stopped)return;
       if(event.code===4001){stopped=true;closeSocket();showError('replaced');return;}
@@ -140,7 +248,7 @@ window.createCoastParty=function(game){
   function reconnect(){
     closeSocket();stopMotion();game.hidePeer();peer=false;samples=[];
     if(stopped)return;
-    if(++attempts>5){showError('network');return;}
+    if(++attempts>5){initP2P(generation);return;}
     status('Connection lost · reconnecting…');solo.hidden=false;
     reconnectTimer=setTimeout(connect,Math.min(8000,500*Math.pow(2,attempts-1)));
   }
@@ -153,18 +261,37 @@ window.createCoastParty=function(game){
     if(busy)return;var creation=++inviteCreation;busy=true;$('inviteTryAgain').hidden=true;
     note.textContent='Creating your invite…';copy.disabled=true;
     try{
-      if(!/^https?:$/.test(location.protocol))throw new Error('offline');
-      var data=await api('/api/rooms');
+      var data=null;
+      if(/^https?:$/.test(location.protocol)){
+        try{data=await api('/api/rooms');}catch{}
+      }
+      if(!data || !data.room){
+        var randHex='';
+        if(typeof crypto!=='undefined'&&crypto.randomUUID)randHex=crypto.randomUUID().replace(/-/g,'');
+        else for(var i=0;i<32;i++)randHex+=Math.floor(Math.random()*16).toString(16);
+        var targetPath=(map==='santa-monica'?'/santa-monica/':'/');
+        data={room:randHex,invite:location.origin+targetPath+'?room='+randHex};
+      }
       if(creation!==inviteCreation)return;
       room=data.room;role='host';myName=playerName($('hostName').value,'user1');saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
-      history.replaceState(null,'','?room='+room);fillLink();
-      note.textContent='Send this link to one friend. It stays available for 24 hours.';
+      history.replaceState(null,'',(map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);fillLink();
+      note.textContent='Share this link with one friend. Keep this page open.';
+      retry.hidden=solo.hidden=$('inviteTryAgain').hidden=true;
+      document.body.classList.add('in-party');
       await connect();
-    }catch{
+    }catch(err){
       if(creation!==inviteCreation)return;
-      window.coastAnalytics.track('invite_create_failed',{reason:'unavailable'});
-      note.textContent=location.protocol==='file:'?'Invites need the online game. Open the live version to play together.':'Could not create the invite. Please try again.';
-      retry.hidden=false;solo.hidden=false;$('inviteTryAgain').hidden=false;status('Invite unavailable');
+      if(!inviteURL){
+        var fallbackHex='';
+        if(typeof crypto!=='undefined'&&crypto.randomUUID)fallbackHex=crypto.randomUUID().replace(/-/g,'');
+        else for(var i=0;i<32;i++)fallbackHex+=Math.floor(Math.random()*16).toString(16);
+        var p=(map==='santa-monica'?'/santa-monica/':'/');
+        room=fallbackHex;role='host';inviteURL=location.origin+p+'?room='+room;
+        history.replaceState(null,'',p+'?room='+room);fillLink();
+        note.textContent='Share this link with one friend. Keep this page open.';
+        retry.hidden=solo.hidden=$('inviteTryAgain').hidden=true;
+        document.body.classList.add('in-party');
+      }
     }finally{if(creation===inviteCreation)busy=false;}
   }
   $('inviteTryAgain').addEventListener('click',openInvite);
@@ -186,6 +313,7 @@ window.createCoastParty=function(game){
     inviteCreation++;busy=false;clearTimeout(nameTimer);stopped=true;closeSocket(true);room=null;role=null;peer=false;samples=[];inviteURL='';startAt=0;begunAt=null;mineReady=false;
     history.replaceState(null,'',location.pathname);game.hidePeer();game.setRole('host');game.restoreRun(100,0);game.boost(0);game.restore([],{});
     retry.hidden=solo.hidden=true;invite.hidden=false;myName='user1';peerName='';departedName='';game.setNames('','');$('hostName').value='user1';status('');$('departureNotice').hidden=true;
+    document.body.classList.remove('in-party');
     if(dialog.open)dialog.close();if(readyDialog.open)readyDialog.close();
   }
   function requestStart(){
@@ -201,14 +329,14 @@ window.createCoastParty=function(game){
   window.addEventListener('online',function(){if(room&&!ready&&!stopped){attempts=0;connect();}});
   document.addEventListener('visibilitychange',function(){
     stopMotion();
-    if(document.hidden && ready && socket && socket.readyState===1){var p=game.pose();p.type='pose';p.seq=++seq;p.healthRevision=healthRevision;socket.send(JSON.stringify(p));}
-    if(!document.hidden && room&&!stopped&&(!socket||socket.readyState>1)){attempts=0;connect();}
+    if(document.hidden && ready && (socket || p2pChannel)){var p=game.pose();p.type='pose';p.seq=++seq;p.healthRevision=healthRevision;send(p);}
+    if(!document.hidden && room&&!stopped&&(!socket||socket.readyState>1)&&!p2pChannel){attempts=0;connect();}
   });
   window.addEventListener('pagehide',function(){closeSocket();});
   window.addEventListener('pageshow',function(e){if(e.persisted&&room&&!stopped)connect();});
   if(room){
     if(!/^[a-f0-9]{32}$/.test(room)){stopped=true;showError('invalid');}
-    else{inviteURL=location.origin+location.pathname+'?room='+room;var saved=savedDriver();if(saved){myName=playerName(saved.name,saved.role==='host'?'user1':'user2');$('hostName').value=myName;game.setRole(saved.role||'guest');updateNames();connect();}else{myName='user2';game.setRole('guest');updateNames();nameDialog.showModal();$('guestName').focus();}}
+    else{inviteURL=location.origin+location.pathname+'?room='+room;document.body.classList.add('in-party');var saved=savedDriver();if(saved){myName=playerName(saved.name,saved.role==='host'?'user1':'user2');$('hostName').value=myName;game.setRole(saved.role||'guest');updateNames();connect();}else{myName='user2';game.setRole('guest');updateNames();nameDialog.showModal();$('guestName').focus();}}
   }else status('');
   window.__COAST_DEBUG=state;
   return {
@@ -218,10 +346,10 @@ window.createCoastParty=function(game){
     blocked:function(){return nameDialog.open || dialog.open || readyDialog.open || (!!room&&(!ready||!startAt||game.now()<startAt));},
     canStart:function(){return !nameDialog.open && !dialog.open && (!room||ready);},
     spawnX:function(){return room?(role==='guest'?-1.8:1.8):0;},
-    reset:function(){if(room){if(ready)socket.send(JSON.stringify({type:'reset'}));return true;}return false;},
+    reset:function(){if(room){if(ready)send({type:'reset'});return true;}return false;},
     frame:function(t){
-      if(ready && startAt && game.now()>=startAt && socket && socket.readyState===1 && t-lastSend>=50 && !document.hidden){
-        lastSend=t;var p=game.pose();p.type='pose';p.seq=++seq;p.healthRevision=healthRevision;socket.send(JSON.stringify(p));
+      if(ready && startAt && game.now()>=startAt && ((socket && socket.readyState===1)||p2pChannel) && t-lastSend>=50 && !document.hidden){
+        lastSend=t;var p=game.pose();p.type='pose';p.seq=++seq;p.healthRevision=healthRevision;p.role=role;send(p);
       }
       if(peer&&samples.length){
         var target=t-100;
