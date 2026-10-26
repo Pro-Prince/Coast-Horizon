@@ -223,6 +223,12 @@ window.createCoastParty=function(game){
         broadcastP2PRoster();
         return;
       }
+      if(m.type==='restart'){
+        var restartPose={x:role==='guest'?-1.8:1.8,y:0,z:0,h:0,v:0};
+        p2pChannel.send({type:'restarted',pose:restartPose});
+        handleMessage({type:'restarted',pose:restartPose});
+        return;
+      }
       handleMessage(m);
     }
 
@@ -390,7 +396,17 @@ window.createCoastParty=function(game){
   }else status('');
   window.__COAST_DEBUG=state;
   return {
-    raceStart:function(){return startAt;},active:function(){return !!room;},leave:leave,launch:function(){send({type:'launch'});},restart:function(){send({type:'restart'});},requestStart:requestStart,
+    raceStart:function(){return startAt;},active:function(){return !!room;},leave:leave,launch:function(){send({type:'launch'});},
+    restart:function(){
+      if(p2pChannel){
+        var restartPose={x:role==='guest'?-1.8:1.8,y:0,z:0,h:0,v:0};
+        p2pChannel.send({type:'restarted',pose:restartPose});
+        handleMessage({type:'restarted',pose:restartPose});
+      }else{
+        send({type:'restart'});
+      }
+    },
+    requestStart:requestStart,
     collect:function(id,kind){var p=game.pose();send({...p,type:'pose',seq:++seq,healthRevision:healthRevision});send({type:kind==='fuel'?'fuel':kind==='repair'?'repair':'boost',pickup:id});},
     sendImpact:function(hit){send({type:'impact',...hit});},
     blocked:function(){return (nameDialog&&nameDialog.open) || (dialog&&dialog.open) || (readyDialog&&readyDialog.open) || (!!room&&(!ready||!startAt||game.now()<startAt));},
