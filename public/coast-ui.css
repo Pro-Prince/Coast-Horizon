@@ -58,13 +58,6 @@ body:not(.is-playing) .party-bar{bottom:104px}
 
 @media(max-width:600px){#lapReadout{top:14px}#lapReadout small{position:absolute;left:0;top:26px;font-size:10px;line-height:10px;padding:2px 8px;border:1px solid #ffffff5c;border-radius:999px;background:#ffffff55}}
 #hostName,#guestName{width:100%;box-sizing:border-box;border:1px solid #cbd8c7;border-radius:12px;padding:12px;color:#244e43;background:white;font:15px system-ui}#hostName{margin-bottom:2px}#inviteDialog label[for=hostName]{margin-top:16px}
-.menu-driver{position:absolute;left:50%;bottom:265px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:#ffffff66;border:1.5px solid #ffffffaa;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:999px;padding:6px 20px;pointer-events:auto;box-shadow:0 4px 18px rgba(10,78,61,.12);transition:background .2s,border-color .2s}
-.menu-driver:focus-within{background:#ffffffee;border-color:#0a4e3d;box-shadow:0 6px 22px rgba(10,78,61,.22)}
-.driver-kicker{font:400 13px/1 Bayon,sans-serif;letter-spacing:.08em;color:#0a4e3d;opacity:.8}
-#menuDriverName{width:150px;background:transparent;border:none;font:400 20px/1 Bayon,sans-serif;letter-spacing:.04em;color:#0a4e3d;outline:none;padding:0}
-#menuDriverName::placeholder{color:#0a4e3d66}
-@media(max-width:600px){.menu-driver{bottom:235px;padding:4px 14px}#menuDriverName{width:115px;font-size:17px}}
-@media(max-height:600px) and (min-width:601px){.menu-driver{bottom:185px;padding:4px 14px}#menuDriverName{width:125px;font-size:17px}}
 #joinNameDialog{width:min(420px,calc(100vw - 32px));padding:30px;border:1px solid #fff8;border-radius:24px;background:#f6f4df;color:#225342;box-shadow:0 24px 100px #103e4566}#joinNameDialog::backdrop{background:#0e3a4044;backdrop-filter:blur(3px)}#joinNameDialog h2{font:34px/1.2 Bayon,sans-serif;margin:14px 0 22px}#joinNameDialog label{display:block;font:15px system-ui;margin-bottom:8px}#joinNameDialog p{font:13px/1.5 system-ui;margin:12px 0}
 #driverLabels{position:fixed;inset:0;pointer-events:none;z-index:5}.driver-name{position:absolute;transform:translate(-50%,-100%);padding:5px 12px;border-radius:20px;background:#f7f3ddec;color:#204d42;border:2px solid #b83b32;box-shadow:0 2px 8px #163a3526;font:600 13px/1.2 system-ui;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}.driver-name:empty{display:none!important}.driver-name[data-role=guest]{border-color:#3c7d9e}
 #departureNotice{position:fixed;left:50%;top:210px;transform:translateX(-50%);z-index:30;border:1px solid #fff8;border-radius:22px;background:#f6f4dfef;color:#225342;padding:12px 22px;font:20px/1.2 Bayon,sans-serif;pointer-events:none}

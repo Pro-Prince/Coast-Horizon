@@ -14,10 +14,9 @@ window.createCoastParty=function(game){
   var inviteURL='', generation=0, attempts=0, reconnectTimer=0, connectTimer=0, pingTimer=0, seq=0, lastSend=0, healthRevision=0;
   var initialName='';
   try{initialName=localStorage.getItem('coast-preferred-name')||'';}catch{}
-  var myName=playerName(initialName,'Driver');
+  var myName=playerName(initialName||($('hostName')?$('hostName').value:'user1'),'user1');
   var nameDialog=$('joinNameDialog'),peerName='',departedName='',nameTimer=0,noticeTimer=0;
   if($('hostName'))$('hostName').value=myName;
-  if($('menuDriverName'))$('menuDriverName').value=myName;
   function savedDriver(){try{return JSON.parse(sessionStorage.getItem('coast-driver:'+room)||'null');}catch{return null;}}
   function saveDriver(){if(room)try{sessionStorage.setItem('coast-driver:'+room,JSON.stringify({name:myName,role:role}));}catch{}}
   function updateNames(){game.setNames(myName,peer?peerName:'');}
@@ -39,10 +38,9 @@ window.createCoastParty=function(game){
       if(ih)ih.textContent='Together is fun';
     }
   }
-  function setDriverName(val){
-    myName=playerName(val,'Driver');
-    if($('hostName') && $('hostName').value!==myName)$('hostName').value=myName;
-    if($('menuDriverName') && $('menuDriverName').value!==myName)$('menuDriverName').value=myName;
+  function shareName(){
+    myName=playerName($('hostName').value,'user1');
+    $('hostName').value=myName;
     try{localStorage.setItem('coast-preferred-name',myName);}catch{}
     saveDriver();
     updateNames();
@@ -55,14 +53,24 @@ window.createCoastParty=function(game){
     }
     send({type:'profile',name:myName});
   }
-  function shareName(){setDriverName($('hostName').value);}
   $('hostName').addEventListener('input',()=>{clearTimeout(nameTimer);nameTimer=setTimeout(shareName,150);});
   $('hostName').addEventListener('change',shareName);
-  if($('menuDriverName')){
-    $('menuDriverName').addEventListener('input',()=>{clearTimeout(nameTimer);nameTimer=setTimeout(()=>setDriverName($('menuDriverName').value),150);});
-    $('menuDriverName').addEventListener('change',()=>setDriverName($('menuDriverName').value));
-  }
-  $('joinNameForm').onsubmit=function(e){e.preventDefault();var val=$('guestName').value.trim();if(!val){$('guestName').setCustomValidity('Please enter your name.');$('guestName').reportValidity();return;}myName=playerName(val,'Driver');try{localStorage.setItem('coast-preferred-name',myName);}catch{}if($('menuDriverName'))$('menuDriverName').value=myName;if($('hostName'))$('hostName').value=myName;saveDriver();nameDialog.close();updateNames();connect();};
+  $('joinNameForm').onsubmit=function(e){
+    e.preventDefault();
+    var val=$('guestName').value.trim();
+    if(!val){
+      $('guestName').setCustomValidity('Please enter your name.');
+      $('guestName').reportValidity();
+      return;
+    }
+    myName=playerName(val,'user2');
+    try{localStorage.setItem('coast-preferred-name',myName);}catch{}
+    if($('hostName'))$('hostName').value=myName;
+    saveDriver();
+    nameDialog.close();
+    updateNames();
+    connect();
+  };
   $('guestName').oninput=()=>$('guestName').setCustomValidity('');
   $('cancelJoin').onclick=()=>{nameDialog.close();leave();};
   nameDialog.addEventListener('cancel',e=>{e.preventDefault();nameDialog.close();leave();});
@@ -423,7 +431,12 @@ window.createCoastParty=function(game){
         data={room:randHex,invite:location.origin+targetPath+'?room='+randHex};
       }
       if(creation!==inviteCreation)return;
-      room=data.room;role='host';myName=playerName($('hostName').value,'Driver');if($('menuDriverName'))$('menuDriverName').value=myName;try{localStorage.setItem('coast-preferred-name',myName);}catch{}saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
+      room=data.room;role='host';
+      var savedName='';try{savedName=localStorage.getItem('coast-preferred-name')||'';}catch{}
+      myName=playerName($('hostName').value||savedName,'user1');
+      $('hostName').value=myName;
+      try{localStorage.setItem('coast-preferred-name',myName);}catch{}
+      saveDriver();game.setRole('host');updateNames();inviteURL=data.invite;stopped=false;attempts=0;
       game.place({x:2.4,y:0,z:0,h:0,v:0});
       history.replaceState(null,'',(map==='santa-monica'?'/santa-monica/':'/')+'?room='+room);fillLink();
       note.textContent='Share this link with one friend. Keep this page open.';
@@ -472,7 +485,7 @@ window.createCoastParty=function(game){
     history.replaceState(null,'',location.pathname);game.hidePeer();game.setRole('host');game.restoreRun(100,0);game.boost(0);game.restore([],{});
     retry.hidden=solo.hidden=true;invite.hidden=false;
     var savedName='';try{savedName=localStorage.getItem('coast-preferred-name')||'';}catch{}
-    myName=playerName(savedName||myName,'Driver');peerName='';departedName='';game.setNames(myName,'');if($('hostName'))$('hostName').value=myName;if($('menuDriverName'))$('menuDriverName').value=myName;status('');$('departureNotice').hidden=true;
+    myName=playerName(savedName||$('hostName')?.value,'user1');peerName='';departedName='';game.setNames('','');if($('hostName'))$('hostName').value=myName;status('');$('departureNotice').hidden=true;
     var l1=$('localDriverName'),l2=$('peerDriverName');if(l1)l1.hidden=true;if(l2)l2.hidden=true;
     document.body.classList.remove('in-party');
     updateMenuButtons(false);
@@ -519,8 +532,8 @@ window.createCoastParty=function(game){
       document.body.classList.add('in-party');
       var saved=savedDriver();
       if(saved){
-        myName=playerName(saved.name,saved.role==='host'?'Driver':'Guest');
-        if(saved.role==='host'){if($('hostName'))$('hostName').value=myName;if($('menuDriverName'))$('menuDriverName').value=myName;}
+        myName=playerName(saved.name,saved.role==='host'?'user1':'user2');
+        if(saved.role==='host'){if($('hostName'))$('hostName').value=myName;}
         else $('guestName').value=myName;
         role=saved.role||'guest';
         game.setRole(role);
@@ -532,7 +545,7 @@ window.createCoastParty=function(game){
         var prefName='';
         try{prefName=localStorage.getItem('coast-preferred-name')||'';}catch{}
         if(prefName)$('guestName').value=prefName;
-        myName=playerName(prefName,'Guest');
+        myName=playerName(prefName,'user2');
         updateNames();
         updateMenuButtons(true);
         nameDialog.showModal();
