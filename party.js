@@ -83,53 +83,37 @@ window.createCoastParty=function(game){
     if(socket && socket.readyState===1)socket.send(JSON.stringify(m));
     else if(p2pChannel)p2pChannel.send(m);
   }
-  function readiness(force=false){
-    game.unlock();if(!ready||!peer)return;
+  function readiness(){
+    game.unlock();if(!ready)return;
     if(startAt&&game.now()>=startAt)return;
-    if(dialog.open)dialog.close();
-    if(!force && readyDismissed && !mineReady)return;
-    if(!readyDialog.open)readyDialog.showModal();
+    if(dialog.open)dialog.close();if(!readyDialog.open)readyDialog.showModal();
   }
   function setReady(val){
     game.unlock();
+    mineReady=!!val;
     if(!val){
-      readyDismissed=true;
-      mineReady=false;
       if(readyDialog.open)readyDialog.close();
       $('readyYes').disabled=false;$('readyYes').textContent='Yes, ready!';
       $('readyNo').textContent='No, not yet';
-      if(p2pChannel){
-        if(role==='host'){
-          hostReady=false;
-          if(broadcastP2PRoster)broadcastP2PRoster();
-          return;
-        }else{
-          p2pChannel.send({type:'ready',value:false});
-          return;
-        }
-      }
-      send({type:'ready',value:false});
-      return;
+    }else{
+      $('readyYes').disabled=true;$('readyYes').textContent='You are ready ✓';
+      $('readyNo').textContent='Not ready yet';
     }
-    readyDismissed=false;
-    mineReady=true;
-    $('readyYes').disabled=true;$('readyYes').textContent='You are ready ✓';
-    $('readyNo').textContent='Not ready yet';
     if(p2pChannel){
       if(role==='host'){
-        hostReady=true;
+        hostReady=!!val;
         if(broadcastP2PRoster)broadcastP2PRoster();
         return;
       }else{
-        p2pChannel.send({type:'ready',value:true});
+        p2pChannel.send({type:'ready',value:!!val});
         return;
       }
     }
-    send({type:'ready',value:true});
+    send({type:'ready',value:!!val});
   }
   $('readyYes').onclick=function(){setReady(true);};
   $('readyNo').onclick=function(){setReady(false);};
-  readyDialog.addEventListener('cancel',function(){setReady(false);});
+  readyDialog.addEventListener('cancel',function(e){e.preventDefault();setReady(false);});
   var lastPong=0, peer=false, lastPeer=0, samples=[], busy=false, inviteCreation=0, lastStatus='';
   function status(text){if(lastStatus===text)return;lastStatus=text;badge.textContent=text;}
   function stopMotion(){game.stop();}
@@ -507,8 +491,7 @@ window.createCoastParty=function(game){
       }
       return true;
     }
-    readyDismissed=false;
-    readiness(true);return true;
+    readiness();return true;
   }
   solo.addEventListener('click',function(){leave();game.place({x:0,z:0,h:0,v:0});game.begin(game.now()+3000);});
   window.addEventListener('offline',function(){

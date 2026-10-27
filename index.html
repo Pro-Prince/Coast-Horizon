@@ -138,10 +138,10 @@ async function start(saved){
  saved=saved||{};
  var container=document.getElementById('canvas-container');
  var renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
- var renderScale=Math.min(devicePixelRatio||1,1,Math.sqrt(2000000/(innerWidth*innerHeight)));
+ var renderScale=Math.min(devicePixelRatio||1,1,Math.sqrt(2300000/(innerWidth*innerHeight)));
  renderer.setPixelRatio(renderScale);renderer.setSize(innerWidth,innerHeight);
  renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.98;
- renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  container.appendChild(renderer.domElement);
  function col(hex){return new THREE.Color(hex).convertSRGBToLinear();}
  function mat(hex,roughness){return new THREE.MeshStandardMaterial({color:col(hex),roughness:roughness===undefined?.78:roughness,metalness:0,envMapIntensity:.25});}
