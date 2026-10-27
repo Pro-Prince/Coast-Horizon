@@ -138,10 +138,10 @@ async function start(saved){
  saved=saved||{};
  var container=document.getElementById('canvas-container');
  var renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
- var renderScale=Math.min(devicePixelRatio||1,1,Math.sqrt(2300000/(innerWidth*innerHeight)));
+ var renderScale=Math.min(devicePixelRatio||1,1,Math.sqrt(2000000/(innerWidth*innerHeight)));
  renderer.setPixelRatio(renderScale);renderer.setSize(innerWidth,innerHeight);
  renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.98;
- renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
  container.appendChild(renderer.domElement);
  function col(hex){return new THREE.Color(hex).convertSRGBToLinear();}
  function mat(hex,roughness){return new THREE.MeshStandardMaterial({color:col(hex),roughness:roughness===undefined?.78:roughness,metalness:0,envMapIntensity:.25});}
@@ -1176,7 +1176,7 @@ async function start(saved){
     var trafficFrame=[];
     var party=window.createCoastParty({
       syncWorld:adventure.sync,
-      pose:function(){return {x:car.position.x,z:car.position.z,h:Math.atan2(Math.sin(heading),Math.cos(heading)),v:velocity,jumpId:jump?jump.id:null,health:health,drowned:drowned,launched:!launchProtected,fuel:fuel,boostUntil:boostUntil};},
+      pose:function(){return {x:car.position.x,z:car.position.z,h:Math.atan2(Math.sin(heading),Math.cos(heading)),v:velocity,jumpId:jump?jump.id:null,health:health,drowned:drowned,launched:!launchProtected};},
       stop:function(){keys=Object.create(null);touch.gas=touch.brake=touch.left=touch.right=false;velocity=0;},
       start:startGame,begin:beginCountdown,unlock:unlockAudio,
       cancelStart:function(){countdownEnd=0;raceStartedAt=0;raceFinishedAt=0;finalRacePosition=null;adventure.setRaceStart(0);countdownEl.hidden=true;document.body.classList.remove('grid-intro');},
@@ -1209,7 +1209,7 @@ async function start(saved){
         // Wheel roll runs every render frame, rather than jumping with network poses.
       }
     });
-    adventure.configure(function(hit){party.sendImpact(hit);},function(id,kind,lap){if(kind==='fuel')refuel();else if(kind==='repair'){var restored=repairedCondition(health);repairCar(restored,restored-health);}else activateBoost(adventure.now()+5000);if(party&&party.active())party.collect(id,kind,lap);},()=>party.active(),kind=>kind!=='nitro'||boostUntil<=adventure.now());
+    adventure.configure(function(hit){party.sendImpact(hit);},function(id,kind){if(party.active())party.collect(id,kind);else if(kind==='fuel')refuel();else if(kind==='repair'){var restored=repairedCondition(health);repairCar(restored,restored-health);}else activateBoost(adventure.now()+5000);},()=>party.active(),kind=>kind!=='nitro'||boostUntil<=adventure.now());
     window.__COAST_RENDER_DEBUG=function(){return {localColor:paint.color.getHexString(),peerColor:peerPaint.color.getHexString(),peerVisible:peerCar.visible,peerHealth:peerHealth,peerY:peerCar.position.y,peerX:peerCar.position.x,peerZ:peerCar.position.z};};
 
     var mainRenderStats={calls:0,triangles:0},lastShadowAt=-Infinity;
@@ -1264,15 +1264,15 @@ async function start(saved){
       fillLight.position.set(car.position.x-15,15,car.position.z+20);sky.position.copy(camera.position);clouds.position.set(camera.position.x,0,camera.position.z);clouds.rotation.y=-performance.now()*.000008;
       if(gameState!=='menu'&&rearView.enabled)rearView.capture();
       renderer.render(scene,camera);
-      var showLabels=party.active();
-      [[car,'localDriverName'],[peerCar,'peerDriverName']].forEach(function([n,id]){
-        var label=document.getElementById(id);
-        if(!label)return;
-        if(!showLabels||!label.textContent||!label.textContent.trim()){label.hidden=true;return;}
-        var p=new THREE.Vector3(0,2.05,0).applyMatrix4(n.matrixWorld).project(camera);
-        label.hidden=!n.visible||p.z< -1||p.z>1||Math.abs(p.x)>1.1||Math.abs(p.y)>1.1;
-        if(!label.hidden){label.style.left=((p.x+1)*innerWidth/2)+'px';label.style.top=((1-p.y)*innerHeight/2)+'px';}
-      });
+      if(party.active()){
+        [[car,'localDriverName'],[peerCar,'peerDriverName']].forEach(function([n,id]){
+          var label=document.getElementById(id);
+          if(!label)return;
+          var p=new THREE.Vector3(0,2.05,0).applyMatrix4(n.matrixWorld).project(camera);
+          label.hidden=!n.visible||!label.textContent||p.z< -1||p.z>1||Math.abs(p.x)>1.1||Math.abs(p.y)>1.1;
+          if(!label.hidden){label.style.left=((p.x+1)*innerWidth/2)+'px';label.style.top=((1-p.y)*innerHeight/2)+'px';}
+        });
+      }
       mainRenderStats.calls=renderer.info.render.calls;mainRenderStats.triangles=renderer.info.render.triangles;
       if(gameState!=='menu'&&rearView.enabled)rearView.overlay();
       camera.position.copy(savedCamera);camera.lookAt(target);
