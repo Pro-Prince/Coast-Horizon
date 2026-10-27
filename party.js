@@ -183,16 +183,13 @@ window.createCoastParty=function(game){
     }else{
       if(mine)game.restoreRun(mine.health,mine.distance,mine.race,mine.fuel);
       begunAt=null;game.cancelStart?.();stopMotion();
-      status(peer?'':departedName?departedName+' left':'Waiting for your friend…');if(!peer&&readyDialog.open)readyDialog.close();
+      status(peer?(role==='host'?'Friend joined · you are red':'Connected · you are blue'):departedName?departedName+' left':'Waiting for your friend…');if(!peer&&readyDialog.open)readyDialog.close();
       $('readyTitle').textContent=peer?peerName+' joined — are you ready?':'Waiting for your friend';
       $('readyMessage').textContent=mineReady?peerName+' is not yet ready. Waiting for their Yes.':peer?'Both drivers choose Yes to start.':'Share your invite. Both drivers must be here to begin.';
       $('readyYes').disabled=mineReady;$('readyYes').textContent=mineReady?'You are ready ✓':'Yes, ready!';
       $('readyNo').textContent=mineReady?'Not ready yet':'No, not yet';
-      if(newlyConnected){
-        readyDismissed=false;
-        readiness(true);
-      }else if(readyDialog.open){
-        readiness(true);
+      if(readyDialog.open){
+        readiness();
       }
     }
     note.textContent=peer?'Your friend is here. Choose when to begin.':'Send this link to one friend. It stays available for 24 hours.';
@@ -206,6 +203,7 @@ window.createCoastParty=function(game){
       if(game.syncWorld && Number.isFinite(m.worldTime))game.syncWorld(m.worldTime);
       game.restoreRun(m.health,m.distance,m.race,m.fuel);game.restore(m.impacts,m.cooldowns);game.restoreRaceWorld?.(m.raceWorld);game.boost(m.boostUntil||0);game.setRole(role);game.place(m.pose);begunAt=null;startAt=m.startAt||0;
       if(role==='guest'){invite.hidden=true;}
+      if(m.hostName && role==='guest'){peerName=m.hostName;departedName='';updateNames();}
       status(role==='host'?'Waiting for your friend · you are red':'Connected · you are blue');
       lastPong=Date.now();
       pingTimer=setInterval(function(){
@@ -235,6 +233,7 @@ window.createCoastParty=function(game){
     if(m.type==='impact'&&(m.target!=='peer'||m.role===role))game.impact(m);
     if(m.type==='pose' && m.role!==role){
       peer=true;lastPeer=performance.now();
+      if(lastStatus.indexOf('away')>=0)status(role==='host'?'Friend joined · you are red':'Connected · you are blue');
       var poseData=m.pose || m;
       if(poseData && typeof poseData.x === 'number' && typeof poseData.z === 'number'){
         samples.push({t:lastPeer,pose:poseData});if(samples.length>12)samples.shift();
@@ -294,8 +293,9 @@ window.createCoastParty=function(game){
         var guestPose={x:-2.4,y:0,z:-3.5,h:0,v:0};
         var hostPose={x:2.4,y:0,z:0,h:0,v:0};
         game.place(hostPose);
-        var welcomeMsg={type:'welcome',role:'guest',name:m.name,pose:guestPose,health:100,distance:0,race:1,fuel:100,startAt:0,_forTab:m._tab};
+        var welcomeMsg={type:'welcome',role:'guest',name:m.name,hostName:myName,pose:guestPose,health:100,distance:0,race:1,fuel:100,startAt:0,_forTab:m._tab};
         p2pChannel.send(welcomeMsg);
+        p2pChannel.send({type:'profile',name:myName});
         broadcastP2PRoster();
         return;
       }
@@ -303,7 +303,9 @@ window.createCoastParty=function(game){
         if(m._forTab&&m._forTab!==tabLabel)return;
         if(joinPulse){clearInterval(joinPulse);joinPulse=null;}
         role='guest';ready=true;attempts=0;clearTimeout(connectTimer);
+        if(m.hostName){peerName=m.hostName;departedName='';updateNames();}
         handleMessage(m);
+        p2pChannel.send({type:'profile',name:myName});
         return;
       }
       if(m.type==='ready'&&isHost){
@@ -595,7 +597,7 @@ window.createCoastParty=function(game){
           var aRoll=a.pose.roll||0, bRoll=b.pose.roll||0;
           var rollAngle=Math.atan2(Math.sin(bRoll-aRoll),Math.cos(bRoll-aRoll));
           game.showPeer({roll:aRoll+rollAngle*f,yaw:(a.pose.yaw||0)+((b.pose.yaw||0)-(a.pose.yaw||0))*f,y:(a.pose.y||0)+((b.pose.y||0)-(a.pose.y||0))*f,pitch:(a.pose.pitch||0)+((b.pose.pitch||0)-(a.pose.pitch||0))*f,jumpId:b.pose.jumpId||null,x:a.pose.x+(b.pose.x-a.pose.x)*f,z:a.pose.z+(b.pose.z-a.pose.z)*f,h:ah+angle*f,v:b.pose.v||0,boostUntil:b.pose.boostUntil||0,health:b.pose.health??100,launched:b.pose.launched!==false,drowned:!!b.pose.drowned});
-          if(t-lastPeer>3500 && !localTest){game.hidePeer();status(role==='host'?'Friend is away · waiting for updates':'Host is away · waiting for updates');}
+          if(startAt && game.now()>=startAt && t-lastPeer>3500 && !localTest){game.hidePeer();status(role==='host'?'Friend is away · waiting for updates':'Host is away · waiting for updates');}
           else if(lastStatus.indexOf('away')>=0)status(role==='host'?'Friend joined · you are red':'Connected · you are blue');
         }
       }
